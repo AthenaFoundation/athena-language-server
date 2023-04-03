@@ -176,6 +176,16 @@ impl SourceFile {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PhraseStmt {
+    pub(crate) syntax: SyntaxNode,
+}
+impl PhraseStmt {
+    pub fn phrase(&self) -> Phrase {
+        support::child(&self.syntax).expect("node is required: this indicates a bug in the parser")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DatatypeStmt {
     pub(crate) syntax: SyntaxNode,
 }
@@ -2834,7 +2844,7 @@ pub enum Phrase {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Stmt {
     Dir(Dir),
-    Phrase(Phrase),
+    PhraseStmt(PhraseStmt),
     DatatypeStmt(DatatypeStmt),
     StructureStmt(StructureStmt),
     DatatypesStmt(DatatypesStmt),
@@ -3311,6 +3321,21 @@ impl AstNode for CompoundSort {
 impl AstNode for SourceFile {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == SOURCE_FILE
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for PhraseStmt {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == PHRASE_STMT
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -5743,9 +5768,9 @@ impl From<Dir> for Stmt {
         Stmt::Dir(node)
     }
 }
-impl From<Phrase> for Stmt {
-    fn from(node: Phrase) -> Stmt {
-        Stmt::Phrase(node)
+impl From<PhraseStmt> for Stmt {
+    fn from(node: PhraseStmt) -> Stmt {
+        Stmt::PhraseStmt(node)
     }
 }
 impl From<DatatypeStmt> for Stmt {
@@ -5772,12 +5797,12 @@ impl AstNode for Stmt {
     fn can_cast(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            DATATYPE_STMT | STRUCTURE_STMT | DATATYPES_STMT | STRUCTURES_STMT
+            PHRASE_STMT | DATATYPE_STMT | STRUCTURE_STMT | DATATYPES_STMT | STRUCTURES_STMT
         ) || Dir::can_cast(kind)
-            || Phrase::can_cast(kind)
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         let res = match syntax.kind() {
+            PHRASE_STMT => Self::PhraseStmt(PhraseStmt { syntax }),
             DATATYPE_STMT => Self::DatatypeStmt(DatatypeStmt { syntax }),
             STRUCTURE_STMT => Self::StructureStmt(StructureStmt { syntax }),
             DATATYPES_STMT => Self::DatatypesStmt(DatatypesStmt { syntax }),
@@ -5787,8 +5812,6 @@ impl AstNode for Stmt {
                     return None;
                 } else if Dir::can_cast(other) {
                     return Dir::cast(syntax).map(Self::Dir);
-                } else if Phrase::can_cast(other) {
-                    return Phrase::cast(syntax).map(Self::Phrase);
                 } else {
                     return None;
                 }
@@ -5800,7 +5823,7 @@ impl AstNode for Stmt {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Stmt::Dir(it) => it.syntax(),
-            Stmt::Phrase(it) => it.syntax(),
+            Stmt::PhraseStmt(it) => it.syntax(),
             Stmt::DatatypeStmt(it) => it.syntax(),
             Stmt::StructureStmt(it) => it.syntax(),
             Stmt::DatatypesStmt(it) => it.syntax(),
@@ -7724,6 +7747,11 @@ impl std::fmt::Display for CompoundSort {
     }
 }
 impl std::fmt::Display for SourceFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for PhraseStmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

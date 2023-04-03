@@ -187,9 +187,17 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                         }
                     }
                 } else {
+                    let (ret, unwrap) = if field.is_optional() {
+                        (quote!(Option<#ty>), quote!())
+                    } else {
+                        (
+                            quote!(#ty),
+                            quote!(.expect("node is required: this indicates a bug in the parser")),
+                        )
+                    };
                     quote! {
-                        pub fn #method_name(&self) -> Option<#ty> {
-                            support::child(&self.syntax)
+                        pub fn #method_name(&self) -> #ret {
+                            support::child(&self.syntax) #unwrap
                         }
                     }
                 }
@@ -837,6 +845,15 @@ impl Field {
             }
         )
     }
+    fn is_optional(&self) -> bool {
+        matches!(
+            self,
+            Field::Node {
+                cardinality: Cardinality::Optional,
+                ..
+            }
+        )
+    }
     fn token_kind(&self) -> Option<proc_macro2::TokenStream> {
         match self {
             Field::Token(token) => Some(token_kind_raw(token)),
@@ -1015,6 +1032,27 @@ fn print_rule(rule: &Rule, grammar: &Grammar) {
     }
 }
 
+struct LabelInfo {
+    name: String,
+    is_optional: bool,
+}
+
+fn parse_label(label: impl AsRef<str>) -> LabelInfo {
+    let label = label.as_ref();
+    if label.starts_with("required__") {
+        let name = label.trim_start_matches("required__").to_string();
+        LabelInfo {
+            name,
+            is_optional: false,
+        }
+    } else {
+        LabelInfo {
+            name: label.to_string(),
+            is_optional: true,
+        }
+    }
+}
+
 fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, rule: &Rule) {
     if lower_comma_list(acc, grammar, label, rule) {
         return;
@@ -1023,11 +1061,21 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
     match rule {
         Rule::Node(node) => {
             let ty = grammar[*node].name.clone();
-            let name = label.cloned().unwrap_or_else(|| to_lower_snake_case(&ty));
+            let label_info = label.map(parse_label);
+            let name = label_info
+                .as_ref()
+                .map(|l| l.name.clone())
+                .unwrap_or_else(|| to_lower_snake_case(&ty));
+
+            let is_optional = label_info.map(|l| l.is_optional).unwrap_or(true);
             let field = Field::Node {
                 name,
                 ty,
-                cardinality: Cardinality::Optional,
+                cardinality: if is_optional {
+                    Cardinality::Optional
+                } else {
+                    Cardinality::One
+                },
             };
             acc.push(field);
         }
@@ -1045,8 +1093,10 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
         Rule::Rep(inner) => {
             if let Rule::Node(node) = &**inner {
                 let ty = grammar[*node].name.clone();
-                let name = label
-                    .cloned()
+                let label_info = label.map(parse_label);
+                let name = label_info
+                    .as_ref()
+                    .map(|l| l.name.clone())
                     .unwrap_or_else(|| pluralize(&to_lower_snake_case(&ty)));
                 let field = Field::Node {
                     name,

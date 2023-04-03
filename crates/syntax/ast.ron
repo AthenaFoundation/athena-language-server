@@ -277,5 +277,6 @@ KindsSrc(
         "DATATYPES_STMT",
         "STRUCTURE_STMT",
         "STRUCTURES_STMT",
+        "PHRASE_STMT",
     ],
 )

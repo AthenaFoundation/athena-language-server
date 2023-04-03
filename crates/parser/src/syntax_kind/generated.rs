@@ -280,6 +280,7 @@ pub enum SyntaxKind {
     DATATYPES_STMT,
     STRUCTURE_STMT,
     STRUCTURES_STMT,
+    PHRASE_STMT,
     #[doc(hidden)]
     __LAST,
 }
@@ -566,6 +567,7 @@ impl SyntaxKind {
                 | DATATYPES_STMT
                 | STRUCTURE_STMT
                 | STRUCTURES_STMT
+                | PHRASE_STMT
         )
     }
     pub fn from_keyword(ident: &str) -> Option<SyntaxKind> {

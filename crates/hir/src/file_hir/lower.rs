@@ -148,27 +148,6 @@ macro_rules! or_continue {
     };
 }
 
-macro_rules! or_return {
-    ($exp: expr) => {
-        match $exp {
-            Some(it) => it,
-            None => return,
-        }
-    };
-    ($exp: expr, default) => {
-        match $exp {
-            Some(it) => it,
-            None => return Default::default(),
-        }
-    };
-    ($exp: expr, $ret: expr) => {
-        match $exp {
-            Some(it) => it,
-            None => return $ret,
-        }
-    };
-}
-
 struct HirBuilder<N> {
     file_id: FileId,
     ast: N,
@@ -303,7 +282,11 @@ impl Ctx {
     fn lower_stmt(&mut self, stmt: ast::Stmt) -> Vec<ModuleItem> {
         match stmt {
             ast::Stmt::Dir(dir) => self.lower_dir(dir).into_iter().flatten().collect(),
-            ast::Stmt::Phrase(p) => self.lower_phrase(p).into_iter().map(Into::into).collect(),
+            ast::Stmt::PhraseStmt(p) => self
+                .lower_phrase(p.phrase())
+                .into_iter()
+                .map(Into::into)
+                .collect(),
             ast::Stmt::DatatypeStmt(_) => {
                 // todo!(); TODO: implement
                 Vec::new()

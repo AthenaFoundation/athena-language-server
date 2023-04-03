@@ -54,23 +54,24 @@ SOURCE_FILE
           R_BRACK "]"
         R_BRACK "]"
     WHITESPACE "\n    "
-    APPLICATION_EXPR
-      L_PAREN "("
-      IDENT_EXPR
-        NAME_REF
-          IDENT "transform-output"
-      WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "eval"
-      WHITESPACE " "
-      LIST_EXPR
-        L_BRACK "["
+    PHRASE_STMT
+      APPLICATION_EXPR
+        L_PAREN "("
         IDENT_EXPR
           NAME_REF
-            IDENT "nat->int"
-        R_BRACK "]"
-      R_PAREN ")"
+            IDENT "transform-output"
+        WHITESPACE " "
+        IDENT_EXPR
+          NAME_REF
+            IDENT "eval"
+        WHITESPACE " "
+        LIST_EXPR
+          L_BRACK "["
+          IDENT_EXPR
+            NAME_REF
+              IDENT "nat->int"
+          R_BRACK "]"
+        R_PAREN ")"
     WHITESPACE "\n    \n    "
     INFIX_ASSERT_DIR
       ASSERT_KW "assert"
@@ -272,41 +273,43 @@ SOURCE_FILE
             IDENT "one"
         R_PAREN ")"
     WHITESPACE "\n\n    "
-    APPLICATION_EXPR
-      L_PAREN "("
-      IDENT_EXPR
-        NAME_REF
-          IDENT "eval"
-      WHITESPACE " "
+    PHRASE_STMT
       APPLICATION_EXPR
         L_PAREN "("
         IDENT_EXPR
           NAME_REF
-            IDENT "factorial"
+            IDENT "eval"
         WHITESPACE " "
-        IDENT_EXPR
-          NAME_REF
-            IDENT "4"
+        APPLICATION_EXPR
+          L_PAREN "("
+          IDENT_EXPR
+            NAME_REF
+              IDENT "factorial"
+          WHITESPACE " "
+          IDENT_EXPR
+            NAME_REF
+              IDENT "4"
+          R_PAREN ")"
         R_PAREN ")"
-      R_PAREN ")"
     WHITESPACE "\n    "
-    APPLICATION_EXPR
-      L_PAREN "("
-      IDENT_EXPR
-        NAME_REF
-          IDENT "eval"
-      WHITESPACE " "
+    PHRASE_STMT
       APPLICATION_EXPR
         L_PAREN "("
         IDENT_EXPR
           NAME_REF
-            IDENT "factorial"
+            IDENT "eval"
         WHITESPACE " "
-        IDENT_EXPR
-          NAME_REF
-            IDENT "5"
+        APPLICATION_EXPR
+          L_PAREN "("
+          IDENT_EXPR
+            NAME_REF
+              IDENT "factorial"
+          WHITESPACE " "
+          IDENT_EXPR
+            NAME_REF
+              IDENT "5"
+          R_PAREN ")"
         R_PAREN ")"
-      R_PAREN ")"
     WHITESPACE "\n\n    "
     INFIX_DEFINE_DIR
       DEFINE_KW "define"
@@ -488,110 +491,31 @@ SOURCE_FILE
         NAME_REF
           IDENT "bar"
     WHITESPACE "\n    "
-    INDUCT_DED
-      BY_INDUCTION_KW "by-induction"
-      WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "f_x_less_than"
-      WHITESPACE " "
-      L_CURLY "{"
-      WHITESPACE "\n        "
-      RESTRICTED_MATCH_DED
-        IDENT_PAT
-          NAME
-            IDENT "zero"
+    PHRASE_STMT
+      INDUCT_DED
+        BY_INDUCTION_KW "by-induction"
         WHITESPACE " "
-        FAT_ARROW "=>"
+        IDENT_EXPR
+          NAME_REF
+            IDENT "f_x_less_than"
         WHITESPACE " "
-        CONCLUDE_DED
-          CONCLUDE_KW "conclude"
+        L_CURLY "{"
+        WHITESPACE "\n        "
+        RESTRICTED_MATCH_DED
+          IDENT_PAT
+            NAME
+              IDENT "zero"
           WHITESPACE " "
-          NAME
-            IDENT "base_case"
+          FAT_ARROW "=>"
           WHITESPACE " "
-          COLON_EQ ":="
-          WHITESPACE " "
-          APPLICATION_EXPR
-            L_PAREN "("
-            IDENT_EXPR
-              NAME_REF
-                IDENT "factorial"
+          CONCLUDE_DED
+            CONCLUDE_KW "conclude"
             WHITESPACE " "
-            APPLICATION_EXPR
-              L_PAREN "("
-              IDENT_EXPR
-                NAME_REF
-                  IDENT "zero"
-              WHITESPACE " "
-              IDENT_EXPR
-                NAME_REF
-                  IDENT "-"
-              WHITESPACE " "
-              IDENT_EXPR
-                NAME_REF
-                  IDENT "one"
-              R_PAREN ")"
+            NAME
+              IDENT "base_case"
             WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "<="
+            COLON_EQ ":="
             WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "factorial"
-            WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "zero"
-            R_PAREN ")"
-          WHITESPACE "\n                    "
-          BANG_METHOD_CALL_DED
-            L_PAREN "("
-            BANG "!"
-            IDENT_EXPR
-              NAME_REF
-                IDENT "force"
-            WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "base_case"
-            R_PAREN ")"
-      WHITESPACE "\n                        \n                    \n        "
-      RESTRICTED_MATCH_DED
-        PIPE "|"
-        WHITESPACE " "
-        NAMED_PAT
-          L_PAREN "("
-          NAME
-            IDENT "m"
-          WHITESPACE " "
-          AS_KW "as"
-          WHITESPACE " "
-          COMPOUND_PAT
-            L_PAREN "("
-            IDENT_PAT
-              NAME
-                IDENT "S"
-            WHITESPACE " "
-            IDENT_PAT
-              NAME
-                IDENT "n"
-            R_PAREN ")"
-          R_PAREN ")"
-        WHITESPACE " "
-        FAT_ARROW "=>"
-        WHITESPACE " "
-        CONCLUDE_DED
-          CONCLUDE_KW "conclude"
-          WHITESPACE " "
-          NAME
-            IDENT "inductive_step"
-          WHITESPACE " "
-          COLON_EQ ":="
-          WHITESPACE " "
-          APPLICATION_EXPR
-            L_PAREN "("
             APPLICATION_EXPR
               L_PAREN "("
               IDENT_EXPR
@@ -602,7 +526,7 @@ SOURCE_FILE
                 L_PAREN "("
                 IDENT_EXPR
                   NAME_REF
-                    IDENT "m"
+                    IDENT "zero"
                 WHITESPACE " "
                 IDENT_EXPR
                   NAME_REF
@@ -612,37 +536,117 @@ SOURCE_FILE
                   NAME_REF
                     IDENT "one"
                 R_PAREN ")"
-              R_PAREN ")"
-            WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "<="
-            WHITESPACE " "
-            APPLICATION_EXPR
-              L_PAREN "("
+              WHITESPACE " "
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "<="
+              WHITESPACE " "
               IDENT_EXPR
                 NAME_REF
                   IDENT "factorial"
               WHITESPACE " "
               IDENT_EXPR
                 NAME_REF
-                  IDENT "m"
+                  IDENT "zero"
+              R_PAREN ")"
+            WHITESPACE "\n                    "
+            BANG_METHOD_CALL_DED
+              L_PAREN "("
+              BANG "!"
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "force"
+              WHITESPACE " "
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "base_case"
+              R_PAREN ")"
+        WHITESPACE "\n                        \n                    \n        "
+        RESTRICTED_MATCH_DED
+          PIPE "|"
+          WHITESPACE " "
+          NAMED_PAT
+            L_PAREN "("
+            NAME
+              IDENT "m"
+            WHITESPACE " "
+            AS_KW "as"
+            WHITESPACE " "
+            COMPOUND_PAT
+              L_PAREN "("
+              IDENT_PAT
+                NAME
+                  IDENT "S"
+              WHITESPACE " "
+              IDENT_PAT
+                NAME
+                  IDENT "n"
               R_PAREN ")"
             R_PAREN ")"
-          WHITESPACE "\n                    "
-          BANG_METHOD_CALL_DED
-            L_PAREN "("
-            BANG "!"
-            IDENT_EXPR
-              NAME_REF
-                IDENT "force"
+          WHITESPACE " "
+          FAT_ARROW "=>"
+          WHITESPACE " "
+          CONCLUDE_DED
+            CONCLUDE_KW "conclude"
             WHITESPACE " "
-            IDENT_EXPR
-              NAME_REF
-                IDENT "inductive_step"
-            R_PAREN ")"
-      WHITESPACE "\n    "
-      R_CURLY "}"
+            NAME
+              IDENT "inductive_step"
+            WHITESPACE " "
+            COLON_EQ ":="
+            WHITESPACE " "
+            APPLICATION_EXPR
+              L_PAREN "("
+              APPLICATION_EXPR
+                L_PAREN "("
+                IDENT_EXPR
+                  NAME_REF
+                    IDENT "factorial"
+                WHITESPACE " "
+                APPLICATION_EXPR
+                  L_PAREN "("
+                  IDENT_EXPR
+                    NAME_REF
+                      IDENT "m"
+                  WHITESPACE " "
+                  IDENT_EXPR
+                    NAME_REF
+                      IDENT "-"
+                  WHITESPACE " "
+                  IDENT_EXPR
+                    NAME_REF
+                      IDENT "one"
+                  R_PAREN ")"
+                R_PAREN ")"
+              WHITESPACE " "
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "<="
+              WHITESPACE " "
+              APPLICATION_EXPR
+                L_PAREN "("
+                IDENT_EXPR
+                  NAME_REF
+                    IDENT "factorial"
+                WHITESPACE " "
+                IDENT_EXPR
+                  NAME_REF
+                    IDENT "m"
+                R_PAREN ")"
+              R_PAREN ")"
+            WHITESPACE "\n                    "
+            BANG_METHOD_CALL_DED
+              L_PAREN "("
+              BANG "!"
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "force"
+              WHITESPACE " "
+              IDENT_EXPR
+                NAME_REF
+                  IDENT "inductive_step"
+              R_PAREN ")"
+        WHITESPACE "\n    "
+        R_CURLY "}"
     WHITESPACE "\n\n"
     R_CURLY "}"
 

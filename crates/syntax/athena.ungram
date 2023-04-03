@@ -16,6 +16,9 @@
 //   A?          -- zero or one repetition
 //   (A)         -- same as A
 //   label:A     -- suggested name for field of AST node
+//
+// Special cases:
+//  required__{label} indicates that the node _must_ be present in the syntax tree
 
 //
 // The `Tokens` non-terminal definition is special. It should consist of alternating terminals
@@ -107,11 +110,14 @@ SourceFile =
 
 Stmt =
     Dir // ✅
-    | Phrase // ✅
+    | PhraseStmt // ✅
     | DatatypeStmt
     | StructureStmt
     | DatatypesStmt
     | StructuresStmt
+
+PhraseStmt =
+    required__phrase : Phrase
 
 StructureNameDef =
     SortDecl
