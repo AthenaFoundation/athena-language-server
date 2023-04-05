@@ -128,6 +128,19 @@ impl AstEnumSrc {
             .collect()
     }
 
+    fn transitive_variants(&self, grammar: &AstSrc) -> Vec<(Ident, Ident)> {
+        let mut new_variants = Vec::new();
+        for variant in self.variants() {
+            if let Some(enm) = grammar.get_enum_node(&variant.to_string()) {
+                new_variants.extend(
+                    std::iter::repeat_with(|| variant.clone()).zip(enm.variants().into_iter()),
+                );
+            }
+        }
+
+        new_variants
+    }
+
     fn partitioned_variants(&self, grammar: &AstSrc) -> (Vec<Ident>, Vec<Ident>) {
         let mut enums = Vec::new();
         let mut non_enums = Vec::new();
@@ -326,6 +339,8 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                 }
             };
 
+            let (transitive_parents, transitive_variants): (Vec<_>, Vec<_>) = en.transitive_variants(grammar).into_iter().unzip();
+
 
             (
                 quote! {
@@ -341,6 +356,13 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                         impl From<#variants> for #name {
                             fn from(node: #variants) -> #name {
                                 #name::#variants(node)
+                            }
+                        }
+                    )*
+                    #(
+                        impl From<#transitive_variants> for #name {
+                            fn from(node: #transitive_variants) -> #name {
+                                #name::#transitive_parents(node.into())
                             }
                         }
                     )*

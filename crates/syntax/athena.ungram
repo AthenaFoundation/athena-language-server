@@ -211,6 +211,7 @@ Dir =
     | SetPrecedenceDir
     | OverloadDir
     | RuleDir
+    | DefineSortDir
 
 ModuleDir =
     'module' Name '{' Stmt* '}'
@@ -361,14 +362,14 @@ SetPrecedenceDir = // if multiple idents, must be surrounded by parens
     '('? 'set-precedence' '('? NameRef* ')'? Expr ')'? // can be surrounded by parens
 
 PhrasePair =
-    '(' Phrase Phrase ')'
+    '(' first_phrase:Phrase second_phrase:Phrase ')'
 
 OverloadDir =
     OverloadSingle
     | OverloadMulti
 
 OverloadSingle =
-    '('? 'overload' Phrase Phrase ')'?
+    '('? 'overload' first_phrase:Phrase second_phrase:Phrase ')'?
 
 OverloadMulti =
     '('? 'overload' PhrasePair* ')'?

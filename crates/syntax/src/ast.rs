@@ -12,7 +12,7 @@ mod traits;
 
 pub use self::{
     generated::{nodes::*, tokens::*},
-    node_ext::{NameOrNameRef, SortLike},
+    node_ext::{DatatypeOrDatatypes, NameOrNameRef, SortLike, StructureOrStructures},
 };
 pub use traits::{HasDefineBody, HasDefineName, HasName, HasNameRef};
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
@@ -131,14 +131,6 @@ mod support {
 }
 
 mod ext {
-    use super::PrefixDefine;
-
-    impl From<PrefixDefine> for super::Definition {
-        fn from(value: PrefixDefine) -> Self {
-            super::Definition::PrefixDefineDir(value.into())
-        }
-    }
-
     impl super::Sort {
         pub fn as_ident_sort(&self) -> Option<&super::IdentSort> {
             match self {

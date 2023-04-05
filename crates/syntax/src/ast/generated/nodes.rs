@@ -489,6 +489,23 @@ impl SetPrecedenceDir {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefineSortDir {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ast::HasName for DefineSortDir {}
+impl DefineSortDir {
+    pub fn define_sort_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![define - sort])
+    }
+    pub fn colon_eq_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![:=])
+    }
+    pub fn sort(&self) -> Option<Sort> {
+        support::child(&self.syntax)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IdentSortDecl {
     pub(crate) syntax: SyntaxNode,
 }
@@ -969,23 +986,6 @@ impl ExpandInputDir {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DefineSortDir {
-    pub(crate) syntax: SyntaxNode,
-}
-impl ast::HasName for DefineSortDir {}
-impl DefineSortDir {
-    pub fn define_sort_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![define - sort])
-    }
-    pub fn colon_eq_token(&self) -> Option<SyntaxToken> {
-        support::token(&self.syntax, T![:=])
-    }
-    pub fn sort(&self) -> Option<Sort> {
-        support::child(&self.syntax)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PhrasePair {
     pub(crate) syntax: SyntaxNode,
 }
@@ -993,7 +993,10 @@ impl PhrasePair {
     pub fn l_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['('])
     }
-    pub fn phrase(&self) -> Option<Phrase> {
+    pub fn first_phrase(&self) -> Option<Phrase> {
+        support::child(&self.syntax)
+    }
+    pub fn second_phrase(&self) -> Option<Phrase> {
         support::child(&self.syntax)
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
@@ -1012,7 +1015,10 @@ impl OverloadSingle {
     pub fn overload_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![overload])
     }
-    pub fn phrase(&self) -> Option<Phrase> {
+    pub fn first_phrase(&self) -> Option<Phrase> {
+        support::child(&self.syntax)
+    }
+    pub fn second_phrase(&self) -> Option<Phrase> {
         support::child(&self.syntax)
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
@@ -2868,6 +2874,7 @@ pub enum Dir {
     SetPrecedenceDir(SetPrecedenceDir),
     OverloadDir(OverloadDir),
     RuleDir(RuleDir),
+    DefineSortDir(DefineSortDir),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -3648,6 +3655,21 @@ impl AstNode for SetPrecedenceDir {
         &self.syntax
     }
 }
+impl AstNode for DefineSortDir {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == DEFINE_SORT_DIR
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
 impl AstNode for IdentSortDecl {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == IDENT_SORT_DECL
@@ -4026,21 +4048,6 @@ impl AstNode for PrefixRuleDir {
 impl AstNode for ExpandInputDir {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == EXPAND_INPUT_DIR
-    }
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-impl AstNode for DefineSortDir {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == DEFINE_SORT_DIR
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -5577,6 +5584,21 @@ impl From<Wildcard> for MaybeWildcardTypedParam {
         MaybeWildcardTypedParam::Wildcard(node)
     }
 }
+impl From<Name> for MaybeWildcardTypedParam {
+    fn from(node: Name) -> MaybeWildcardTypedParam {
+        MaybeWildcardTypedParam::MaybeTypedParam(node.into())
+    }
+}
+impl From<TypedParam> for MaybeWildcardTypedParam {
+    fn from(node: TypedParam) -> MaybeWildcardTypedParam {
+        MaybeWildcardTypedParam::MaybeTypedParam(node.into())
+    }
+}
+impl From<OpAnnotatedParam> for MaybeWildcardTypedParam {
+    fn from(node: OpAnnotatedParam) -> MaybeWildcardTypedParam {
+        MaybeWildcardTypedParam::MaybeTypedParam(node.into())
+    }
+}
 impl AstNode for MaybeWildcardTypedParam {
     fn can_cast(kind: SyntaxKind) -> bool {
         matches!(kind, WILDCARD) || MaybeTypedParam::can_cast(kind)
@@ -5736,6 +5758,246 @@ impl From<Ded> for Phrase {
         Phrase::Ded(node)
     }
 }
+impl From<IdentExpr> for Phrase {
+    fn from(node: IdentExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<LiteralExpr> for Phrase {
+    fn from(node: LiteralExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<UnitExpr> for Phrase {
+    fn from(node: UnitExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<TermVarExpr> for Phrase {
+    fn from(node: TermVarExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MetaIdent> for Phrase {
+    fn from(node: MetaIdent) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<CheckExpr> for Phrase {
+    fn from(node: CheckExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<LambdaExpr> for Phrase {
+    fn from(node: LambdaExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<ApplicationExpr> for Phrase {
+    fn from(node: ApplicationExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<ListExpr> for Phrase {
+    fn from(node: ListExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MethodExpr> for Phrase {
+    fn from(node: MethodExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<LetExpr> for Phrase {
+    fn from(node: LetExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<LetRecExpr> for Phrase {
+    fn from(node: LetRecExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MatchExpr> for Phrase {
+    fn from(node: MatchExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<TryExpr> for Phrase {
+    fn from(node: TryExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<CellExpr> for Phrase {
+    fn from(node: CellExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<SetExpr> for Phrase {
+    fn from(node: SetExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<RefExpr> for Phrase {
+    fn from(node: RefExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<WhileExpr> for Phrase {
+    fn from(node: WhileExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MakeVectorExpr> for Phrase {
+    fn from(node: MakeVectorExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<VectorSubExpr> for Phrase {
+    fn from(node: VectorSubExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<VectorSetExpr> for Phrase {
+    fn from(node: VectorSetExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<SeqExpr> for Phrase {
+    fn from(node: SeqExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<AndExpr> for Phrase {
+    fn from(node: AndExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<OrExpr> for Phrase {
+    fn from(node: OrExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MapExpr> for Phrase {
+    fn from(node: MapExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<WildcardExpr> for Phrase {
+    fn from(node: WildcardExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<PrefixCheckExpr> for Phrase {
+    fn from(node: PrefixCheckExpr) -> Phrase {
+        Phrase::Expr(node.into())
+    }
+}
+impl From<MethodCallDed> for Phrase {
+    fn from(node: MethodCallDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<BangMethodCallDed> for Phrase {
+    fn from(node: BangMethodCallDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<AssumeDed> for Phrase {
+    fn from(node: AssumeDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<NamedAssumeDed> for Phrase {
+    fn from(node: NamedAssumeDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<ProofByContraDed> for Phrase {
+    fn from(node: ProofByContraDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<GeneralizeOverDed> for Phrase {
+    fn from(node: GeneralizeOverDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<PickAnyDed> for Phrase {
+    fn from(node: PickAnyDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<WithWitnessDed> for Phrase {
+    fn from(node: WithWitnessDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<PickWitnessDed> for Phrase {
+    fn from(node: PickWitnessDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<PickWitnessesDed> for Phrase {
+    fn from(node: PickWitnessesDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<InductDed> for Phrase {
+    fn from(node: InductDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<CasesDed> for Phrase {
+    fn from(node: CasesDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<CheckDed> for Phrase {
+    fn from(node: CheckDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<MatchDed> for Phrase {
+    fn from(node: MatchDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<LetDed> for Phrase {
+    fn from(node: LetDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<LetRecDed> for Phrase {
+    fn from(node: LetRecDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<TryDed> for Phrase {
+    fn from(node: TryDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<ConcludeDed> for Phrase {
+    fn from(node: ConcludeDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<InferBlockDed> for Phrase {
+    fn from(node: InferBlockDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<PrefixAssumeDed> for Phrase {
+    fn from(node: PrefixAssumeDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
+impl From<SeqDed> for Phrase {
+    fn from(node: SeqDed) -> Phrase {
+        Phrase::Ded(node.into())
+    }
+}
 impl AstNode for Phrase {
     fn can_cast(kind: SyntaxKind) -> bool {
         Expr::can_cast(kind) || Ded::can_cast(kind)
@@ -5791,6 +6053,86 @@ impl From<DatatypesStmt> for Stmt {
 impl From<StructuresStmt> for Stmt {
     fn from(node: StructuresStmt) -> Stmt {
         Stmt::StructuresStmt(node)
+    }
+}
+impl From<ModuleDir> for Stmt {
+    fn from(node: ModuleDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<DomainDir> for Stmt {
+    fn from(node: DomainDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<DomainsDir> for Stmt {
+    fn from(node: DomainsDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<DefineDir> for Stmt {
+    fn from(node: DefineDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<LoadDir> for Stmt {
+    fn from(node: LoadDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<AssertDir> for Stmt {
+    fn from(node: AssertDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<AssertClosedDir> for Stmt {
+    fn from(node: AssertClosedDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<DeclareDir> for Stmt {
+    fn from(node: DeclareDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<ConstantDeclareDir> for Stmt {
+    fn from(node: ConstantDeclareDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<ExtendModuleDir> for Stmt {
+    fn from(node: ExtendModuleDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<OpenDir> for Stmt {
+    fn from(node: OpenDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<AssociativityDir> for Stmt {
+    fn from(node: AssociativityDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<SetPrecedenceDir> for Stmt {
+    fn from(node: SetPrecedenceDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<OverloadDir> for Stmt {
+    fn from(node: OverloadDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<RuleDir> for Stmt {
+    fn from(node: RuleDir) -> Stmt {
+        Stmt::Dir(node.into())
+    }
+}
+impl From<DefineSortDir> for Stmt {
+    fn from(node: DefineSortDir) -> Stmt {
+        Stmt::Dir(node.into())
     }
 }
 impl AstNode for Stmt {
@@ -5906,6 +6248,71 @@ impl From<RuleDir> for Dir {
         Dir::RuleDir(node)
     }
 }
+impl From<DefineSortDir> for Dir {
+    fn from(node: DefineSortDir) -> Dir {
+        Dir::DefineSortDir(node)
+    }
+}
+impl From<InfixDefineDir> for Dir {
+    fn from(node: InfixDefineDir) -> Dir {
+        Dir::DefineDir(node.into())
+    }
+}
+impl From<PrefixDefineDir> for Dir {
+    fn from(node: PrefixDefineDir) -> Dir {
+        Dir::DefineDir(node.into())
+    }
+}
+impl From<InfixAssertDir> for Dir {
+    fn from(node: InfixAssertDir) -> Dir {
+        Dir::AssertDir(node.into())
+    }
+}
+impl From<PrefixAssertDir> for Dir {
+    fn from(node: PrefixAssertDir) -> Dir {
+        Dir::AssertDir(node.into())
+    }
+}
+impl From<PrefixDeclareDir> for Dir {
+    fn from(node: PrefixDeclareDir) -> Dir {
+        Dir::DeclareDir(node.into())
+    }
+}
+impl From<InfixDeclareDir> for Dir {
+    fn from(node: InfixDeclareDir) -> Dir {
+        Dir::DeclareDir(node.into())
+    }
+}
+impl From<InfixConstantDeclare> for Dir {
+    fn from(node: InfixConstantDeclare) -> Dir {
+        Dir::ConstantDeclareDir(node.into())
+    }
+}
+impl From<PrefixConstantDeclare> for Dir {
+    fn from(node: PrefixConstantDeclare) -> Dir {
+        Dir::ConstantDeclareDir(node.into())
+    }
+}
+impl From<OverloadSingle> for Dir {
+    fn from(node: OverloadSingle) -> Dir {
+        Dir::OverloadDir(node.into())
+    }
+}
+impl From<OverloadMulti> for Dir {
+    fn from(node: OverloadMulti) -> Dir {
+        Dir::OverloadDir(node.into())
+    }
+}
+impl From<InfixRuleDir> for Dir {
+    fn from(node: InfixRuleDir) -> Dir {
+        Dir::RuleDir(node.into())
+    }
+}
+impl From<PrefixRuleDir> for Dir {
+    fn from(node: PrefixRuleDir) -> Dir {
+        Dir::RuleDir(node.into())
+    }
+}
 impl AstNode for Dir {
     fn can_cast(kind: SyntaxKind) -> bool {
         matches!(
@@ -5919,6 +6326,7 @@ impl AstNode for Dir {
                 | OPEN_DIR
                 | ASSOCIATIVITY_DIR
                 | SET_PRECEDENCE_DIR
+                | DEFINE_SORT_DIR
         ) || DefineDir::can_cast(kind)
             || AssertDir::can_cast(kind)
             || DeclareDir::can_cast(kind)
@@ -5937,6 +6345,7 @@ impl AstNode for Dir {
             OPEN_DIR => Self::OpenDir(OpenDir { syntax }),
             ASSOCIATIVITY_DIR => Self::AssociativityDir(AssociativityDir { syntax }),
             SET_PRECEDENCE_DIR => Self::SetPrecedenceDir(SetPrecedenceDir { syntax }),
+            DEFINE_SORT_DIR => Self::DefineSortDir(DefineSortDir { syntax }),
             other => {
                 if false {
                     return None;
@@ -5977,6 +6386,7 @@ impl AstNode for Dir {
             Dir::SetPrecedenceDir(it) => it.syntax(),
             Dir::OverloadDir(it) => it.syntax(),
             Dir::RuleDir(it) => it.syntax(),
+            Dir::DefineSortDir(it) => it.syntax(),
         }
     }
 }
@@ -6090,6 +6500,46 @@ impl From<Assertion> for MetaDefinition {
         MetaDefinition::Assertion(node)
     }
 }
+impl From<InfixDefineDir> for MetaDefinition {
+    fn from(node: InfixDefineDir) -> MetaDefinition {
+        MetaDefinition::Definition(node.into())
+    }
+}
+impl From<PrefixDefineDir> for MetaDefinition {
+    fn from(node: PrefixDefineDir) -> MetaDefinition {
+        MetaDefinition::Definition(node.into())
+    }
+}
+impl From<DomainDir> for MetaDefinition {
+    fn from(node: DomainDir) -> MetaDefinition {
+        MetaDefinition::Domain(node.into())
+    }
+}
+impl From<DomainsDir> for MetaDefinition {
+    fn from(node: DomainsDir) -> MetaDefinition {
+        MetaDefinition::Domain(node.into())
+    }
+}
+impl From<DeclareDir> for MetaDefinition {
+    fn from(node: DeclareDir) -> MetaDefinition {
+        MetaDefinition::FunctionSymbol(node.into())
+    }
+}
+impl From<ConstantDeclareDir> for MetaDefinition {
+    fn from(node: ConstantDeclareDir) -> MetaDefinition {
+        MetaDefinition::FunctionSymbol(node.into())
+    }
+}
+impl From<AssertDir> for MetaDefinition {
+    fn from(node: AssertDir) -> MetaDefinition {
+        MetaDefinition::Assertion(node.into())
+    }
+}
+impl From<AssertClosedDir> for MetaDefinition {
+    fn from(node: AssertClosedDir) -> MetaDefinition {
+        MetaDefinition::Assertion(node.into())
+    }
+}
 impl AstNode for MetaDefinition {
     fn can_cast(kind: SyntaxKind) -> bool {
         Definition::can_cast(kind)
@@ -6134,6 +6584,16 @@ impl From<InfixDefineDir> for Definition {
 impl From<PrefixDefineDir> for Definition {
     fn from(node: PrefixDefineDir) -> Definition {
         Definition::PrefixDefineDir(node)
+    }
+}
+impl From<PrefixDefine> for Definition {
+    fn from(node: PrefixDefine) -> Definition {
+        Definition::PrefixDefineDir(node.into())
+    }
+}
+impl From<PrefixDefineBlocks> for Definition {
+    fn from(node: PrefixDefineBlocks) -> Definition {
+        Definition::PrefixDefineDir(node.into())
     }
 }
 impl AstNode for Definition {
@@ -6203,6 +6663,26 @@ impl From<ConstantDeclareDir> for FunctionSymbol {
         FunctionSymbol::ConstantDeclareDir(node)
     }
 }
+impl From<PrefixDeclareDir> for FunctionSymbol {
+    fn from(node: PrefixDeclareDir) -> FunctionSymbol {
+        FunctionSymbol::DeclareDir(node.into())
+    }
+}
+impl From<InfixDeclareDir> for FunctionSymbol {
+    fn from(node: InfixDeclareDir) -> FunctionSymbol {
+        FunctionSymbol::DeclareDir(node.into())
+    }
+}
+impl From<InfixConstantDeclare> for FunctionSymbol {
+    fn from(node: InfixConstantDeclare) -> FunctionSymbol {
+        FunctionSymbol::ConstantDeclareDir(node.into())
+    }
+}
+impl From<PrefixConstantDeclare> for FunctionSymbol {
+    fn from(node: PrefixConstantDeclare) -> FunctionSymbol {
+        FunctionSymbol::ConstantDeclareDir(node.into())
+    }
+}
 impl AstNode for FunctionSymbol {
     fn can_cast(kind: SyntaxKind) -> bool {
         DeclareDir::can_cast(kind) || ConstantDeclareDir::can_cast(kind)
@@ -6238,6 +6718,16 @@ impl From<AssertDir> for Assertion {
 impl From<AssertClosedDir> for Assertion {
     fn from(node: AssertClosedDir) -> Assertion {
         Assertion::AssertClosedDir(node)
+    }
+}
+impl From<InfixAssertDir> for Assertion {
+    fn from(node: InfixAssertDir) -> Assertion {
+        Assertion::AssertDir(node.into())
+    }
+}
+impl From<PrefixAssertDir> for Assertion {
+    fn from(node: PrefixAssertDir) -> Assertion {
+        Assertion::AssertDir(node.into())
     }
 }
 impl AstNode for Assertion {
@@ -6487,6 +6977,16 @@ impl From<InfixDefineDir> for DefineDir {
 impl From<PrefixDefineDir> for DefineDir {
     fn from(node: PrefixDefineDir) -> DefineDir {
         DefineDir::PrefixDefineDir(node)
+    }
+}
+impl From<PrefixDefine> for DefineDir {
+    fn from(node: PrefixDefine) -> DefineDir {
+        DefineDir::PrefixDefineDir(node.into())
+    }
+}
+impl From<PrefixDefineBlocks> for DefineDir {
+    fn from(node: PrefixDefineBlocks) -> DefineDir {
+        DefineDir::PrefixDefineDir(node.into())
     }
 }
 impl AstNode for DefineDir {
@@ -6741,6 +7241,16 @@ impl From<PrefixCheckExpr> for Expr {
         Expr::PrefixCheckExpr(node)
     }
 }
+impl From<InfixMatchExpr> for Expr {
+    fn from(node: InfixMatchExpr) -> Expr {
+        Expr::MatchExpr(node.into())
+    }
+}
+impl From<PrefixMatchExpr> for Expr {
+    fn from(node: PrefixMatchExpr) -> Expr {
+        Expr::MatchExpr(node.into())
+    }
+}
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
         matches!(
@@ -6993,6 +7503,71 @@ impl From<PrefixAssumeDed> for Ded {
 impl From<SeqDed> for Ded {
     fn from(node: SeqDed) -> Ded {
         Ded::SeqDed(node)
+    }
+}
+impl From<InfixCheckDed> for Ded {
+    fn from(node: InfixCheckDed) -> Ded {
+        Ded::CheckDed(node.into())
+    }
+}
+impl From<PrefixCheckDed> for Ded {
+    fn from(node: PrefixCheckDed) -> Ded {
+        Ded::CheckDed(node.into())
+    }
+}
+impl From<InfixMatchDed> for Ded {
+    fn from(node: InfixMatchDed) -> Ded {
+        Ded::MatchDed(node.into())
+    }
+}
+impl From<PrefixMatchDed> for Ded {
+    fn from(node: PrefixMatchDed) -> Ded {
+        Ded::MatchDed(node.into())
+    }
+}
+impl From<InfixLetDed> for Ded {
+    fn from(node: InfixLetDed) -> Ded {
+        Ded::LetDed(node.into())
+    }
+}
+impl From<PrefixLetDed> for Ded {
+    fn from(node: PrefixLetDed) -> Ded {
+        Ded::LetDed(node.into())
+    }
+}
+impl From<InfixLetRecDed> for Ded {
+    fn from(node: InfixLetRecDed) -> Ded {
+        Ded::LetRecDed(node.into())
+    }
+}
+impl From<PrefixLetRecDed> for Ded {
+    fn from(node: PrefixLetRecDed) -> Ded {
+        Ded::LetRecDed(node.into())
+    }
+}
+impl From<InfixTryDed> for Ded {
+    fn from(node: InfixTryDed) -> Ded {
+        Ded::TryDed(node.into())
+    }
+}
+impl From<PrefixTryDed> for Ded {
+    fn from(node: PrefixTryDed) -> Ded {
+        Ded::TryDed(node.into())
+    }
+}
+impl From<PrefixNamedAssumeDed> for Ded {
+    fn from(node: PrefixNamedAssumeDed) -> Ded {
+        Ded::PrefixAssumeDed(node.into())
+    }
+}
+impl From<PrefixSingleAssumeDed> for Ded {
+    fn from(node: PrefixSingleAssumeDed) -> Ded {
+        Ded::PrefixAssumeDed(node.into())
+    }
+}
+impl From<PrefixAssumeLetDed> for Ded {
+    fn from(node: PrefixAssumeLetDed) -> Ded {
+        Ded::PrefixAssumeDed(node.into())
     }
 }
 impl AstNode for Ded {
@@ -7319,6 +7894,156 @@ impl From<Expr> for InferOrExpr {
         InferOrExpr::Expr(node)
     }
 }
+impl From<InferFrom> for InferOrExpr {
+    fn from(node: InferFrom) -> InferOrExpr {
+        InferOrExpr::Inference(node.into())
+    }
+}
+impl From<InferBy> for InferOrExpr {
+    fn from(node: InferBy) -> InferOrExpr {
+        InferOrExpr::Inference(node.into())
+    }
+}
+impl From<Ded> for InferOrExpr {
+    fn from(node: Ded) -> InferOrExpr {
+        InferOrExpr::Inference(node.into())
+    }
+}
+impl From<IdentExpr> for InferOrExpr {
+    fn from(node: IdentExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<LiteralExpr> for InferOrExpr {
+    fn from(node: LiteralExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<UnitExpr> for InferOrExpr {
+    fn from(node: UnitExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<TermVarExpr> for InferOrExpr {
+    fn from(node: TermVarExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<MetaIdent> for InferOrExpr {
+    fn from(node: MetaIdent) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<CheckExpr> for InferOrExpr {
+    fn from(node: CheckExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<LambdaExpr> for InferOrExpr {
+    fn from(node: LambdaExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<ApplicationExpr> for InferOrExpr {
+    fn from(node: ApplicationExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<ListExpr> for InferOrExpr {
+    fn from(node: ListExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<MethodExpr> for InferOrExpr {
+    fn from(node: MethodExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<LetExpr> for InferOrExpr {
+    fn from(node: LetExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<LetRecExpr> for InferOrExpr {
+    fn from(node: LetRecExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<MatchExpr> for InferOrExpr {
+    fn from(node: MatchExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<TryExpr> for InferOrExpr {
+    fn from(node: TryExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<CellExpr> for InferOrExpr {
+    fn from(node: CellExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<SetExpr> for InferOrExpr {
+    fn from(node: SetExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<RefExpr> for InferOrExpr {
+    fn from(node: RefExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<WhileExpr> for InferOrExpr {
+    fn from(node: WhileExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<MakeVectorExpr> for InferOrExpr {
+    fn from(node: MakeVectorExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<VectorSubExpr> for InferOrExpr {
+    fn from(node: VectorSubExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<VectorSetExpr> for InferOrExpr {
+    fn from(node: VectorSetExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<SeqExpr> for InferOrExpr {
+    fn from(node: SeqExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<AndExpr> for InferOrExpr {
+    fn from(node: AndExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<OrExpr> for InferOrExpr {
+    fn from(node: OrExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<MapExpr> for InferOrExpr {
+    fn from(node: MapExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<WildcardExpr> for InferOrExpr {
+    fn from(node: WildcardExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
+impl From<PrefixCheckExpr> for InferOrExpr {
+    fn from(node: PrefixCheckExpr) -> InferOrExpr {
+        InferOrExpr::Expr(node.into())
+    }
+}
 impl AstNode for InferOrExpr {
     fn can_cast(kind: SyntaxKind) -> bool {
         Inference::can_cast(kind) || Expr::can_cast(kind)
@@ -7359,6 +8084,111 @@ impl From<InferBy> for Inference {
 impl From<Ded> for Inference {
     fn from(node: Ded) -> Inference {
         Inference::Ded(node)
+    }
+}
+impl From<MethodCallDed> for Inference {
+    fn from(node: MethodCallDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<BangMethodCallDed> for Inference {
+    fn from(node: BangMethodCallDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<AssumeDed> for Inference {
+    fn from(node: AssumeDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<NamedAssumeDed> for Inference {
+    fn from(node: NamedAssumeDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<ProofByContraDed> for Inference {
+    fn from(node: ProofByContraDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<GeneralizeOverDed> for Inference {
+    fn from(node: GeneralizeOverDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<PickAnyDed> for Inference {
+    fn from(node: PickAnyDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<WithWitnessDed> for Inference {
+    fn from(node: WithWitnessDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<PickWitnessDed> for Inference {
+    fn from(node: PickWitnessDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<PickWitnessesDed> for Inference {
+    fn from(node: PickWitnessesDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<InductDed> for Inference {
+    fn from(node: InductDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<CasesDed> for Inference {
+    fn from(node: CasesDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<CheckDed> for Inference {
+    fn from(node: CheckDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<MatchDed> for Inference {
+    fn from(node: MatchDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<LetDed> for Inference {
+    fn from(node: LetDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<LetRecDed> for Inference {
+    fn from(node: LetRecDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<TryDed> for Inference {
+    fn from(node: TryDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<ConcludeDed> for Inference {
+    fn from(node: ConcludeDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<InferBlockDed> for Inference {
+    fn from(node: InferBlockDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<PrefixAssumeDed> for Inference {
+    fn from(node: PrefixAssumeDed) -> Inference {
+        Inference::Ded(node.into())
+    }
+}
+impl From<SeqDed> for Inference {
+    fn from(node: SeqDed) -> Inference {
+        Inference::Ded(node.into())
     }
 }
 impl AstNode for Inference {
@@ -7447,6 +8277,7 @@ impl AstNode for AnyHasName {
                 | MODULE_DIR
                 | EXTEND_MODULE_DIR
                 | ASSERT_CLOSED_DIR
+                | DEFINE_SORT_DIR
                 | IDENT_SORT_DECL
                 | PREFIX_SINGLE_SYMBOL
                 | DECLARE_ATTR
@@ -7456,7 +8287,6 @@ impl AstNode for AnyHasName {
                 | PREFIX_ASSERT_DIR
                 | INFIX_RULE_DIR
                 | PREFIX_RULE_DIR
-                | DEFINE_SORT_DIR
                 | LET_REC_PART
                 | PICK_WITNESS_DED
                 | PICK_WITNESSES_DED
@@ -7856,6 +8686,11 @@ impl std::fmt::Display for SetPrecedenceDir {
         std::fmt::Display::fmt(self.syntax(), f)
     }
 }
+impl std::fmt::Display for DefineSortDir {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
 impl std::fmt::Display for IdentSortDecl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
@@ -7982,11 +8817,6 @@ impl std::fmt::Display for PrefixRuleDir {
     }
 }
 impl std::fmt::Display for ExpandInputDir {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self.syntax(), f)
-    }
-}
-impl std::fmt::Display for DefineSortDir {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

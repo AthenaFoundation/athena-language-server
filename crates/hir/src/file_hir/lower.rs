@@ -621,6 +621,10 @@ impl Ctx {
                 // todo!(); TODO: implement
                 None
             }
+            ast::Dir::DefineSortDir(_) => {
+                // todo!(); TODO: implement
+                None
+            }
         }
     }
 
