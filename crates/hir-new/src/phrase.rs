@@ -1,10 +1,18 @@
 use la_arena::Idx;
 
-use crate::{ded::DedId, expr::ExprId};
+use crate::{
+    ded::{Ded, DedId},
+    expr::{Expr, ExprId},
+};
 
-pub enum Phrase {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PhraseId {
     Expr(ExprId),
     Ded(DedId),
 }
 
-pub type PhraseId = Idx<Phrase>;
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Phrase {
+    Expr(Expr),
+    Ded(Ded),
+}

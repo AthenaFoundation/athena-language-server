@@ -280,7 +280,7 @@ DeclareAttrs =
     '[' DeclareAttr* InputTransformDecl? ']'
 
 FuncSorts =
-    '[' Sort* ']'
+    '['? Sort* ']'?
 
 SortVarsDecl =
     '(' (IdentSortDecl (',' IdentSortDecl)*) ')'

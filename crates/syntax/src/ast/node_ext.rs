@@ -116,3 +116,11 @@ wrapper_enum! {
         Structures(ast::StructuresStmt),
     }
 }
+
+wrapper_enum! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum TermSymbol {
+        Function(ast::DeclareDir),
+        Constant(ast::ConstantDeclareDir),
+    }
+}

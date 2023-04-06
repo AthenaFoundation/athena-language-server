@@ -1,12 +1,23 @@
 mod lower;
 
 use base_db::FileId;
-use derivative::Derivative;
+use impl_tools::autoimpl;
 use la_arena::{Arena, Idx};
 use std::{ops::Index, sync::Arc};
 use syntax::{ast, AstNode};
 
-use crate::{ast_map::FileAstId, db::HirNewDatabase, name::Name, sort_ref::SortRef};
+use crate::{
+    ast_map::FileAstId,
+    body::{Body, BodyId},
+    db::HirNewDatabase,
+    ded::Ded,
+    dir::Dir,
+    expr::Expr,
+    name::Name,
+    pat::{StmtPat, StmtPatId},
+    phrase::Phrase,
+    sort_ref::SortRef,
+};
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct StmtTree {
@@ -33,14 +44,15 @@ struct StmtTreeData {
     modules: Arena<Module>,
     module_exts: Arena<ModuleExtension>,
     func_symbols: Arena<FunctionSymbol>,
-    constant_symbols: Arena<ConstantSymbol>,
     sort_aliases: Arena<SortAlias>,
     file_imports: Arena<FileImport>,
     module_imports: Arena<ModuleImport>,
     domains: Arena<DomainDeclaration>,
-    assoc: Arena<AssociativityDeclaration>,
     assertions: Arena<Assertion>,
     closed_assertions: Arena<ClosedAssertion>,
+    dirs: Arena<Dir>,
+    bodies: Arena<Body>,
+    pats: Arena<StmtPat>,
 }
 
 pub trait StmtTreeNode: Clone {
@@ -55,29 +67,13 @@ pub trait StmtTreeNode: Clone {
     fn id_to_module_stmt(id: FileStmtTreeId<Self>) -> ModuleStmt;
 }
 
-#[derive(Derivative)]
-#[derivative(
-    Debug(bound = ""),
-    Clone(bound = ""),
-    Copy(bound = ""),
-    Eq(bound = ""),
-    PartialEq(bound = ""),
-    Hash(bound = "")
-)]
+#[autoimpl(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct StmtTreeId<N: StmtTreeNode> {
     file: FileId,
     pub value: FileStmtTreeId<N>,
 }
 
-#[derive(Derivative)]
-#[derivative(
-    Debug(bound = ""),
-    Clone(bound = ""),
-    Copy(bound = ""),
-    Eq(bound = ""),
-    PartialEq(bound = ""),
-    Hash(bound = "")
-)]
+#[autoimpl(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct FileStmtTreeId<N: StmtTreeNode>(Idx<N>);
 
 macro_rules! module_stmts {
@@ -135,9 +131,14 @@ macro_rules! module_stmts {
 module_stmts! {
     Module in modules -> ast::ModuleDir,
     ModuleExtension in module_exts -> ast::ExtendModuleDir,
-    FunctionSymbol in func_symbols -> ast::DeclareDir,
-    ConstantSymbol in constant_symbols -> ast::ConstantDeclareDir,
+    FunctionSymbol in func_symbols -> ast::TermSymbol,
     SortAlias in sort_aliases -> ast::DefineSortDir,
+    FileImport in file_imports -> ast::LoadDir,
+    ModuleImport in module_imports -> ast::OpenDir,
+    DomainDeclaration in domains -> ast::Domain,
+    Assertion in assertions -> ast::AssertDir,
+    ClosedAssertion in closed_assertions -> ast::AssertClosedDir,
+    Dir in dirs -> ast::Dir,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -155,14 +156,10 @@ pub struct ModuleExtension {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionSymbol {
-    pub name: Name,
-    pub ast_id: FileAstId<ast::DeclareDir>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConstantSymbol {
-    pub name: Name,
-    pub ast_id: FileAstId<ast::ConstantDeclareDir>,
+    pub names: Vec<Name>,
+    pub arg_sorts: Vec<SortRef>,
+    pub ret_sort: SortRef,
+    pub ast_id: FileAstId<ast::TermSymbol>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -196,28 +193,17 @@ pub struct DomainDeclaration {
     pub ast_id: FileAstId<ast::Domain>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Associativity {
-    Left,
-    Right,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AssociativityDeclaration {
-    pub associativity: Associativity,
-    pub target: Name,
-    pub ast_id: FileAstId<ast::AssociativityDir>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Assertion {
     pub name: Option<Name>,
+    pub bodies: Vec<BodyId>,
     pub ast_id: FileAstId<ast::AssertDir>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClosedAssertion {
     pub name: Option<Name>,
+    pub body: BodyId,
     pub ast_id: FileAstId<ast::AssertClosedDir>,
 }
 
@@ -228,7 +214,26 @@ pub struct Overload {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Definition {
+    pub kind: DefKind,
+    pub body: BodyId,
     pub ast_id: FileAstId<ast::DefineDir>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DefKind {
+    Procedure(Name, Vec<Param>),
+
+    Value(Name),
+
+    PatternValue(StmtPatId),
+
+    NamedPatternValue(Name, StmtPatId),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Param {
+    pub name: Name,
+    pub sort: Option<SortRef>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -237,13 +242,8 @@ pub struct PrimitiveMethod {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SetPrecedence {
-    pub names: Vec<Name>,
-    pub ast_id: FileAstId<ast::SetPrecedenceDir>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PhraseStmt {
+    pub body: BodyId,
     pub ast_id: FileAstId<ast::PhraseStmt>,
 }
 
@@ -260,5 +260,6 @@ pub struct Structures {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrecedenceDeclaration {
     pub names: Vec<Name>,
+    pub value: BodyId,
     pub ast_id: FileAstId<ast::SetPrecedenceDir>,
 }

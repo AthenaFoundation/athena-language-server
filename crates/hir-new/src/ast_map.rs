@@ -65,30 +65,13 @@ impl AstIdMap {
 
         bdfs(node, |node| {
             let kind = node.kind();
-            if ast::Dir::can_cast(kind) || ast::Phrase::can_cast(kind) {
-                return true;
-            }
-            if ast::DefineDir::can_cast(kind)
-                || ast::AssertClosedDir::can_cast(kind)
-                || ast::AssertDir::can_cast(kind)
-            {
+            if ast::Dir::can_cast(kind) || ast::Stmt::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
-                true
-            } else if ast::DeclareDir::can_cast(kind)
-                || ast::ConstantDeclareDir::can_cast(kind)
-                || ast::DomainDir::can_cast(kind)
-                || ast::DomainsDir::can_cast(kind)
-                || ast::DatatypesStmt::can_cast(kind)
-                || ast::DatatypeStmt::can_cast(kind)
-                || ast::StructuresStmt::can_cast(kind)
-                || ast::StructureStmt::can_cast(kind)
-            {
+                return true;
+            } else if ast::Phrase::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
                 false
-            } else if ast::ModuleDir::can_cast(kind) || ast::ExtendModuleDir::can_cast(kind) {
-                arena.alloc(SyntaxNodePtr::new(&node));
-                true
-            } else if ast::Phrase::can_cast(kind) || ast::Expr::can_cast(kind) {
+            } else if ast::Pat::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
                 false
             } else {

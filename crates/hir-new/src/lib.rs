@@ -7,6 +7,7 @@ mod pat;
 mod phrase;
 mod sort_ref;
 mod stmt_tree;
+mod body;
 
 pub mod db;
 
