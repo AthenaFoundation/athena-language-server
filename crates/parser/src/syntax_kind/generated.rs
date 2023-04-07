@@ -244,6 +244,7 @@ pub enum SyntaxKind {
     DOMAINS_DIR,
     MODULE_DIR,
     LOAD_DIR,
+    FILE_PATH,
     INFIX_ASSERT_DIR,
     ASSERT_CLOSED_DIR,
     OPEN_DIR,
@@ -531,6 +532,7 @@ impl SyntaxKind {
                 | DOMAINS_DIR
                 | MODULE_DIR
                 | LOAD_DIR
+                | FILE_PATH
                 | INFIX_ASSERT_DIR
                 | ASSERT_CLOSED_DIR
                 | OPEN_DIR
@@ -1015,6 +1017,12 @@ macro_rules! T {
     };
     [shebang] => {
         $crate ::SyntaxKind::SHEBANG
+    };
+    [string] => {
+        $crate ::SyntaxKind::STRING
+    };
+    [char] => {
+        $crate ::SyntaxKind::CHAR
     };
 }
 pub use T;

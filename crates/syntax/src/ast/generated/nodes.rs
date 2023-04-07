@@ -37,7 +37,14 @@ impl NameRef {
 pub struct Literal {
     pub(crate) syntax: SyntaxNode,
 }
-impl Literal {}
+impl Literal {
+    pub fn string_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![string])
+    }
+    pub fn char_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![char])
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MetaIdent {
@@ -433,6 +440,9 @@ impl LoadDir {
     }
     pub fn load_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![load])
+    }
+    pub fn file_path(&self) -> Option<FilePath> {
+        support::child(&self.syntax)
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![')'])
@@ -877,6 +887,16 @@ impl ListPat {
     }
     pub fn r_brack_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![']'])
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FilePath {
+    pub(crate) syntax: SyntaxNode,
+}
+impl FilePath {
+    pub fn string_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![string])
     }
 }
 
@@ -3973,6 +3993,21 @@ impl AstNode for DefineProc {
 impl AstNode for ListPat {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == LIST_PAT
+    }
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+impl AstNode for FilePath {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == FILE_PATH
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if Self::can_cast(syntax.kind()) {
@@ -8792,6 +8827,11 @@ impl std::fmt::Display for DefineProc {
     }
 }
 impl std::fmt::Display for ListPat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for FilePath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

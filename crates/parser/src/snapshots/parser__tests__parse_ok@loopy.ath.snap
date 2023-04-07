@@ -7,12 +7,14 @@ SOURCE_FILE
   LOAD_DIR
     LOAD_KW "load"
     WHITESPACE " "
-    STRING "\"nat-minus\""
+    FILE_PATH
+      STRING "\"nat-minus\""
   WHITESPACE "\n"
   LOAD_DIR
     LOAD_KW "load"
     WHITESPACE " "
-    STRING "\"nat-minus\""
+    FILE_PATH
+      STRING "\"nat-minus\""
   WHITESPACE "\n\n"
   MODULE_DIR
     MODULE_KW "module"

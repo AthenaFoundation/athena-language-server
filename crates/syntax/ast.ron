@@ -240,6 +240,7 @@ KindsSrc(
         "DOMAINS_DIR",
         "MODULE_DIR",
         "LOAD_DIR",
+        "FILE_PATH",
         "INFIX_ASSERT_DIR",
         "ASSERT_CLOSED_DIR",
         "OPEN_DIR",

@@ -646,6 +646,8 @@ fn generate_syntax_kinds(grammar: &KindsSrc) -> String {
             [lifetime_ident] => { $crate::SyntaxKind::LIFETIME_IDENT };
             [ident] => { $crate::SyntaxKind::IDENT };
             [shebang] => { $crate::SyntaxKind::SHEBANG };
+            [string] => { $crate::SyntaxKind::STRING };
+            [char] => { $crate::SyntaxKind::CHAR };
         }
         pub use T;
     };
@@ -1104,13 +1106,11 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
         Rule::Token(token) => {
             assert!(label.is_none());
             let mut name = grammar[*token].name.clone();
-            if name != "int_number" && name != "string" && name != "char" {
-                if "[]{}()".contains(&name) {
-                    name = format!("'{name}'");
-                }
-                let field = Field::Token(name);
-                acc.push(field);
+            if "[]{}()".contains(&name) {
+                name = format!("'{name}'");
             }
+            let field = Field::Token(name);
+            acc.push(field);
         }
         Rule::Rep(inner) => {
             if let Rule::Node(node) = &**inner {

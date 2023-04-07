@@ -317,8 +317,11 @@ DefineNamedPattern =
 DefineProc = 
     '(' Name args:MaybeWildcardTypedParam* ')'
 
+FilePath =
+    'string'
+
 LoadDir =
-    '('? 'load' 'string' ')'? // can be surrounded by parens
+    '('? 'load' FilePath ')'? // can be surrounded by parens
 
 AssertDir = 
     InfixAssertDir

@@ -620,7 +620,9 @@ fn load_dir(p: &mut Parser, kind: ParseKind) {
             p.bump_any();
         }
     } else {
+        let m = p.start();
         p.bump(SyntaxKind::STRING);
+        m.complete(p, SyntaxKind::FILE_PATH);
     }
 
     if kind.is_prefix() {
