@@ -34,8 +34,8 @@ impl fmt::Display for Name {
     }
 }
 
-impl Name {
-    pub fn as_smol_str(&self) -> SmolStr {
-        self.0.clone()
-    }
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum NameOrWildcard {
+    Name(Name),
+    Wildcard,
 }

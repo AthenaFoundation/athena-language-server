@@ -1,6 +1,4 @@
-use la_arena::Idx;
-
-use crate::{name::Name, sort_ref::SortRef};
+use crate::{hir::Name, hir::SortRef};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Literal {
@@ -15,5 +13,3 @@ pub enum Expr {
     TermVar(Name, Option<SortRef>),
     Unit,
 }
-
-pub type ExprId = Idx<Expr>;

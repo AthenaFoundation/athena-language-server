@@ -4,7 +4,7 @@ use std::sync::Arc;
 use base_db::{salsa, FileId, SourceDatabase};
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
-use syntax::{ast, AstNode, SyntaxNode, SyntaxNodePtr};
+use syntax::{ast, AstNode, AstPtr, SyntaxNode, SyntaxNodePtr};
 
 use crate::InFile;
 
@@ -51,6 +51,7 @@ impl<N: AstNode> fmt::Debug for FileAstId<N> {
 
 type ErasedAstId = Idx<SyntaxNodePtr>;
 
+#[allow(dead_code)]
 pub type AstId<N> = InFile<FileAstId<N>>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -93,6 +94,19 @@ impl AstIdMap {
             raw,
             _type: std::marker::PhantomData,
         }
+    }
+
+    pub fn ast_id_ptr<N: AstNode>(&self, node: &AstPtr<N>) -> FileAstId<N> {
+        let ptr = node.syntax_node_ptr();
+        let raw = self.ptr_to_id.get(&ptr).copied().unwrap();
+        FileAstId {
+            raw,
+            _type: std::marker::PhantomData,
+        }
+    }
+
+    pub fn get<N: AstNode>(&self, id: FileAstId<N>) -> AstPtr<N> {
+        AstPtr::try_from_raw(self.arena[id.raw].clone()).unwrap()
     }
 
     fn erased_ast_id(&self, node: &SyntaxNode) -> ErasedAstId {
