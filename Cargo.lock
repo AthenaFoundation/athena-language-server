@@ -116,6 +116,7 @@ dependencies = [
  "salsa",
  "syntax",
  "test-utils",
+ "tracing",
 ]
 
 [[package]]
@@ -592,6 +593,7 @@ checksum = "d897f394bad6a705d5f4104762e116a75639e470d80901eed05a860a95cb1904"
 name = "ide"
 version = "0.1.0"
 dependencies = [
+ "extend",
  "hir",
  "ide-db",
  "itertools",

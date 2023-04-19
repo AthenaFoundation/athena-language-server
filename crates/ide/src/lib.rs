@@ -13,7 +13,7 @@ use ide_db::{
 };
 
 use core::fmt;
-use std::{panic::UnwindSafe, sync::Arc};
+use std::{panic::UnwindSafe, path::PathBuf, sync::Arc};
 
 pub use crate::syntax_highlighting::{
     tags::{Highlight, HlPunct, HlTag},
@@ -36,11 +36,21 @@ pub struct AnalysisHost {
     db: RootDatabase,
 }
 
+fn init_roots(db: &mut RootDatabase) {
+    if let Ok(home) = std::env::var("ATHENA_HOME") {
+        let home = PathBuf::from(home);
+        let Ok(home) = home.canonicalize() else { return };
+        db.set_roots(vec![ide_db::base_db::VfsPath::from(AbsPathBuf::assert(home))].into());
+    } else {
+        db.set_roots(Arc::new([]))
+    }
+}
+
 impl AnalysisHost {
     pub fn new() -> AnalysisHost {
-        AnalysisHost {
-            db: RootDatabase::new(),
-        }
+        let mut db = RootDatabase::new();
+        init_roots(&mut db);
+        AnalysisHost { db }
     }
 
     pub fn analysis(&self) -> Analysis {

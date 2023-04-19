@@ -10,3 +10,4 @@ salsa = "0.17.0-pre.2"
 paths.workspace = true
 syntax.workspace = true
 test-utils.workspace = true
+tracing.workspace = true

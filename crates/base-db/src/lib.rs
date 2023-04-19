@@ -1,9 +1,12 @@
 pub mod fixture;
+mod resolve_path;
+mod virtual_path;
 
 pub use paths::{AbsPath, AbsPathBuf};
 pub use salsa::{self, Cancelled};
 use std::sync::Arc;
 use syntax::{ast, Parse, TextRange, TextSize};
+pub use virtual_path::VirtualFilePathBuf;
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -45,7 +48,7 @@ impl_intern_key!(FileId);
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum VfsPath {
     Real(AbsPathBuf),
-    Virtual(VirtualFilePath),
+    Virtual(VirtualFilePathBuf),
 }
 
 impl VfsPath {
@@ -70,18 +73,9 @@ impl From<AbsPathBuf> for VfsPath {
     }
 }
 
-impl From<VirtualFilePath> for VfsPath {
-    fn from(value: VirtualFilePath) -> Self {
+impl From<VirtualFilePathBuf> for VfsPath {
+    fn from(value: VirtualFilePathBuf) -> Self {
         Self::Virtual(value)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct VirtualFilePath(String);
-
-impl From<String> for VirtualFilePath {
-    fn from(value: String) -> Self {
-        Self(value)
     }
 }
 
@@ -91,20 +85,33 @@ pub trait FileWatcher {
     fn in_mem_contents(&self, path: &AbsPath) -> Option<Arc<String>>;
 
     fn set_in_mem_contents(&mut self, path: AbsPathBuf, contents: Arc<String>);
+
+    fn add_virtual_file(&mut self, path: VirtualFilePathBuf, contents: Arc<String>);
+
+    fn get_virtual_file(&self, path: VirtualFilePathBuf) -> Option<Arc<String>>;
 }
 
 #[salsa::query_group(SourceDatabaseStorage)]
-pub trait SourceDatabase: std::fmt::Debug + FileWatcher {
+pub trait SourceDatabase: std::fmt::Debug + FileWatcher + VirtualFileDatabase {
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Parse<ast::SourceFile>;
 
     #[salsa::interned]
     fn intern_path(&self, path: VfsPath) -> FileId;
 
-    #[salsa::input]
-    fn virtual_file_contents(&self, file: VirtualFilePath) -> Arc<String>;
-
     fn file_contents(&self, file: FileId) -> Arc<String>;
+
+    #[salsa::invoke(resolve_path::resolve_file_path_query)]
+    fn resolve_file_path(&self, from: FileId, path: String) -> Option<FileId>;
+
+    #[salsa::input]
+    fn roots(&self) -> Arc<[VfsPath]>;
+}
+
+#[salsa::query_group(VirtualFileDatabaseStorage)]
+pub trait VirtualFileDatabase {
+    #[salsa::input]
+    fn virtual_file_contents(&self, file: VirtualFilePathBuf) -> Arc<String>;
 }
 
 fn file_contents(db: &dyn SourceDatabase, file: FileId) -> Arc<String> {

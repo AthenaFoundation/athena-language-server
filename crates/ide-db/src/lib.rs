@@ -7,18 +7,20 @@ use std::sync::Arc;
 
 pub use base_db;
 
-use base_db::{salsa, FileContentsQuery, FileId, FileWatcher};
+use base_db::{salsa, FileContentsQuery, FileId, FileWatcher, VirtualFileDatabase};
 use line_index::LineIndex;
 use rustc_hash::FxHashMap;
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
+    base_db::VirtualFileDatabaseStorage,
     LineIndexDatabaseStorage,
     hir::HirDatabaseStorage
 )]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
     in_mem_files: Arc<FxHashMap<base_db::AbsPathBuf, Arc<String>>>,
+    virtual_files: Arc<FxHashMap<base_db::VirtualFilePathBuf, Arc<String>>>,
 }
 
 impl salsa::Database for RootDatabase {}
@@ -34,6 +36,7 @@ impl salsa::ParallelDatabase for RootDatabase {
         salsa::Snapshot::new(RootDatabase {
             storage: self.storage.snapshot(),
             in_mem_files: self.in_mem_files.clone(),
+            virtual_files: self.virtual_files.clone(),
         })
     }
 }
@@ -43,6 +46,7 @@ impl RootDatabase {
         RootDatabase {
             storage: salsa::Storage::default(),
             in_mem_files: Default::default(),
+            virtual_files: Default::default(),
         }
     }
 }
@@ -66,6 +70,15 @@ impl FileWatcher for RootDatabase {
 
     fn set_in_mem_contents(&mut self, path: base_db::AbsPathBuf, contents: Arc<String>) {
         Arc::make_mut(&mut self.in_mem_files).insert(path, contents);
+    }
+
+    fn add_virtual_file(&mut self, path: base_db::VirtualFilePathBuf, contents: Arc<String>) {
+        Arc::make_mut(&mut self.virtual_files).insert(path.clone(), contents.clone());
+        self.set_virtual_file_contents(path, contents);
+    }
+
+    fn get_virtual_file(&self, path: base_db::VirtualFilePathBuf) -> Option<Arc<String>> {
+        self.virtual_files.get(&path).cloned()
     }
 }
 
