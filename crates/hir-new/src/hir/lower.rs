@@ -80,7 +80,7 @@ impl<'db> Ctx<'db> {
             }
             ast::Stmt::Dir(ast::Dir::DefineDir(define)) => self.lower_define_dir(define).map(into),
             ast::Stmt::Dir(ast::Dir::DefineSortDir(alias_def)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::LoadDir(load)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::LoadDir(load)) => self.lower_load_dir(load).map(into),
             ast::Stmt::Dir(ast::Dir::DomainDir(domain)) => todo!(),
             ast::Stmt::Dir(ast::Dir::DomainsDir(domains)) => todo!(),
             ast::Stmt::Dir(ast::Dir::AssociativityDir(associativity)) => todo!(),
@@ -99,8 +99,11 @@ impl<'db> Ctx<'db> {
     }
 
     fn lower_load_dir(&mut self, load: &ast::LoadDir) -> Option<FileImportId> {
-        let path = load.file_path()?.string_token()?.text();
-        todo!()
+        let path = load.file_path()?.string_token()?;
+        let path = path.text().into();
+        let resolved = self.db.resolve_file_path(self.hir.file_id, path)?;
+        let import = FileImport { file: resolved };
+        Some(self.alloc(load, import))
     }
 
     fn lower_phrase(&mut self, phrase: &ast::Phrase) -> Option<PhraseId> {
