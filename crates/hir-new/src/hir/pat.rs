@@ -29,3 +29,9 @@ impl Pat {
 pub struct Pat {
     pub kind: PatKind,
 }
+
+impl super::DebugDump for Pat {
+    fn debug_dump(&self, dd: &mut super::DebugDumper) -> core::fmt::Result {
+        todo!()
+    }
+}

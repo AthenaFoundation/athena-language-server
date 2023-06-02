@@ -101,6 +101,13 @@ impl<'a> VfsPathComponent<'a> {
                 | (VfsPathComponent::Virtual(_), VfsPath::Virtual(_))
         )
     }
+
+    fn is_absolute(&self) -> bool {
+        match self {
+            VfsPathComponent::Real(path) => path.is_absolute(),
+            VfsPathComponent::Virtual(path) => path.is_absolute(),
+        }
+    }
 }
 
 impl<'a> From<&'a VirtualFilePath> for VfsPathComponent<'a> {
@@ -150,7 +157,14 @@ pub(super) fn resolve_file_path_query(
     from: FileId,
     path: String,
 ) -> Option<FileId> {
+    eprintln!("resolve_file_path_query({:?}, {:?})", from, path);
     if let Ok(virt) = VirtualFilePathBuf::try_from(&*path) {
+        if virt.is_absolute() {
+            eprintln!("absolute");
+            if virt.as_path().file_exists(db) {
+                return Some(db.intern_path(virt.into()));
+            }
+        }
         return find_file(db, from, virt.as_path().into());
     }
 

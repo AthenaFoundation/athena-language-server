@@ -16,6 +16,8 @@ pub trait HirNewDatabase: AstDatabase + Upcast<dyn AstDatabase> {
     fn file_hir(&self, file_id: FileId) -> Arc<FileHir>;
 
     fn source_map(&self, file_id: FileId) -> Arc<SourceMap>;
+    #[salsa::invoke(FileHir::debug_dump_query)]
+    fn debug_dump(&self, file_id: FileId) -> String;
 }
 
 fn file_hir(db: &dyn HirNewDatabase, file_id: FileId) -> Arc<FileHir> {

@@ -5,7 +5,7 @@ use test_utils::{
     extract_range_or_offset, Fixture, RangeOrOffset, CURSOR_MARKER, ESCAPED_CURSOR_MARKER,
 };
 
-use crate::{FileId, FilePosition, FileRange, SourceDatabase, VirtualFilePathBuf};
+use crate::{FileId, FilePosition, FileRange, SourceDatabase, VfsPath, VirtualFilePathBuf};
 
 pub trait WithFixture: Default + SourceDatabase + 'static {
     fn with_single_file(ath_fixture: &str) -> (Self, FileId) {
@@ -67,6 +67,12 @@ pub struct ChangeFixture {
 impl ChangeFixture {
     pub fn apply(&mut self, db: &mut dyn SourceDatabase) {
         assert_eq!(self.file_paths.len(), self.file_contents.len());
+        db.set_roots(
+            vec![VfsPath::Virtual(VirtualFilePathBuf::assert(
+                "virtual:/".into(),
+            ))]
+            .into(),
+        );
         for (idx, (path, text)) in self
             .file_paths
             .iter()
@@ -103,15 +109,13 @@ impl ChangeFixture {
             } else {
                 entry.text.clone()
             };
+            // For convenience, convert rust style comments `//` to athena style `#`
+            let text = text.replace("//", "#");
 
             let mut meta = FileMeta::from(entry);
             if !meta.path.starts_with(source_root_prefix.as_str()) {
                 assert!(meta.path.starts_with("/"));
-                let path = [
-                    source_root_prefix.as_str(),
-                    meta.path.trim_start_matches("/"),
-                ]
-                .join("");
+                let path = [source_root_prefix.as_str(), meta.path.as_str()].join("");
 
                 meta.path = path;
             }

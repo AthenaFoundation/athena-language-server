@@ -100,7 +100,8 @@ impl<'db> Ctx<'db> {
 
     fn lower_load_dir(&mut self, load: &ast::LoadDir) -> Option<FileImportId> {
         let path = load.file_path()?.string_token()?;
-        let path = path.text().into();
+        let path: String = path.text().into();
+        let path = path.trim_matches('"').into();
         let resolved = self.db.resolve_file_path(self.hir.file_id, path)?;
         let import = FileImport { file: resolved };
         Some(self.alloc(load, import))
@@ -210,6 +211,14 @@ impl<'db> Ctx<'db> {
                 ast::DeclareDir::PrefixDeclareDir(_) => todo!(),
                 ast::DeclareDir::InfixDeclareDir(declare) => {
                     let names = declare.names().map(|name| name.as_name()).collect();
+                    let sort_vars = declare
+                        .sort_vars_decl()
+                        .map(|decl| {
+                            decl.ident_sort_decls()
+                                .filter_map(|i| i.name().map(|n| n.as_name()))
+                                .collect()
+                        })
+                        .unwrap_or_default();
                     let arg_sorts = declare
                         .func_sorts()?
                         .sorts()
@@ -222,6 +231,7 @@ impl<'db> Ctx<'db> {
                             names,
                             arg_sorts,
                             ret_sort,
+                            sort_vars,
                         },
                     );
                     Some(func)
@@ -236,6 +246,7 @@ impl<'db> Ctx<'db> {
                         term_symbol,
                         FunctionSymbol {
                             names,
+                            sort_vars: Vec::new(),
                             arg_sorts: Vec::new(),
                             ret_sort,
                         },

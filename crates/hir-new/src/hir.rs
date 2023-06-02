@@ -1,3 +1,4 @@
+mod debug_dump;
 mod ded;
 mod dir;
 mod expr;
@@ -8,6 +9,10 @@ mod phrase;
 mod sort_ref;
 mod stmt;
 
+#[cfg(test)]
+mod tests;
+
+use core::fmt;
 use std::{hash::BuildHasherDefault, sync::Arc};
 
 use base_db::FileId;
@@ -18,6 +23,7 @@ use syntax::{ast, AstNode, AstPtr};
 use crate::{ast_map::FileAstId, db::HirNewDatabase, InFile};
 
 pub use self::{
+    debug_dump::{DebugDump, DebugDumper},
     ded::Ded,
     dir::Dir,
     expr::Expr,
@@ -58,6 +64,24 @@ impl FileHir {
         let (hir, map) = ctx.lower_file(file);
         (Arc::new(hir), Arc::new(map))
     }
+
+    pub(crate) fn debug_dump_query(db: &dyn HirNewDatabase, file_id: FileId) -> String {
+        let (hir, source_map) = db.file_hir_with_source_map(file_id);
+        let mut buf = String::new();
+
+        let mut dd = DebugDumper::new(&hir, &source_map, &mut buf, db);
+        hir.debug_dump(&mut dd).unwrap();
+        buf
+    }
+}
+
+impl DebugDump for FileHir {
+    fn debug_dump(&self, dd: &mut DebugDumper) -> fmt::Result {
+        for stmt in &self.top_level {
+            stmt.debug_dump(dd)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -97,6 +121,29 @@ pub trait HirNode: Sized {
     fn alloc(self, hir: &mut FileHir) -> Idx<Self>;
 
     fn record_source(id: Idx<Self>, file_ast_id: FileAstId<Self::Ast>, source_map: &mut SourceMap);
+}
+
+pub trait Get {
+    type Output<'a>;
+
+    fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a>;
+}
+
+impl<T> Get for &T
+where
+    T: Get + Copy,
+{
+    type Output<'a> = <T as Get>::Output<'a>;
+
+    fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a> {
+        (*self).get(hir)
+    }
+}
+
+impl FileHir {
+    pub fn get<'a, G: Get>(&'a self, id: G) -> <G as Get>::Output<'a> {
+        id.get(self)
+    }
 }
 
 macro_rules! hir_maps {
@@ -164,6 +211,22 @@ macro_rules! hir_maps {
                 pub type [<$hir Id>] = ::la_arena::Idx<$hir>;
             }
 
+            impl ::std::ops::Index<::la_arena::Idx<$hir>> for FileHir {
+                type Output = $hir;
+
+                fn index(&self, index: ::la_arena::Idx<$hir>) -> &Self::Output {
+                    &self.data.$arena[index]
+                }
+            }
+
+            impl Get for ::la_arena::Idx<$hir> {
+                type Output<'a> = &'a $hir;
+
+                fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a> {
+                    &hir.data.$arena[self]
+                }
+            }
+
 		)*
 	};
     ($(
@@ -218,7 +281,75 @@ macro_rules! impl_from_idx {
     };
 }
 
-impl_from_idx! {
+macro_rules! impl_debug_dump {
+    (delegate $($e: ident),* for $t: ty) => {
+        impl $crate::hir::DebugDump for $t {
+            fn debug_dump(
+                &self,
+                dd: &mut $crate::hir::debug_dump::DebugDumper<'_>,
+            ) -> ::core::fmt::Result {
+                match self {
+                    $(
+                        Self::$e(v) => {
+                            v.debug_dump(dd)?;
+                        }
+                    )+
+                }
+                Ok(())
+            }
+        }
+    };
+    ($($e: ident),* for $t: ty) => {
+        impl $crate::hir::DebugDump for $t {
+            fn debug_dump(
+                &self,
+                dd: &mut $crate::hir::debug_dump::DebugDumper<'_>,
+            ) -> ::core::fmt::Result {
+                match self {
+                    $(
+                        Self::$e(idx) => {
+                            dd.hir[*idx].debug_dump(dd)?;
+                        }
+                    )+
+                }
+                Ok(())
+            }
+        }
+    };
+    (delegate ids $($e: ident),* for $t: ty) => {
+        impl $crate::hir::DebugDump for $t {
+            fn debug_dump(
+                &self,
+                hir: &$crate::hir::FileHir,
+                source_map: &$crate::hir::SourceMap,
+                f: &mut dyn ::core::fmt::Write,
+            ) -> ::core::fmt::Result {
+                match self {
+                    $(
+                        Self::$e(idx) => {
+                            hir[*idx].debug_dump(hir, source_map, f)?;
+                        }
+                    )+
+                }
+                Ok(())
+            }
+        }
+    };
+}
+
+pub(crate) use impl_debug_dump;
+
+macro_rules! impl_macros {
+    ($(,)? ; $($e: ident),+ for $t: ty) => {};
+    ($m1: ident ! $(, $rest: ident !)* ; $($e: ident),+ for $t: ty) => {
+        $m1!($($e),+ for $t);
+        impl_macros!($($rest!),* ; $($e),+ for $t);
+    };
+}
+
+impl_macros! {
+    impl_from_idx!, impl_debug_dump!;
+
     Module,
     ModuleExtension,
     FunctionSymbol,

@@ -1,6 +1,10 @@
 mod ast_map;
 pub mod db;
+#[cfg(test)]
+mod fixture;
 pub mod hir;
+#[cfg(test)]
+mod test_db;
 
 use base_db::FileId;
 

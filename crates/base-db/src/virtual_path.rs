@@ -27,6 +27,10 @@ impl VirtualFilePath {
         // SAFETY: VirtualFilePath is a repr(transparent) wrapper around Path
         unsafe { &*(path as *const Path as *const VirtualFilePath) }
     }
+
+    pub fn is_absolute(&self) -> bool {
+        self.0.is_absolute()
+    }
 }
 
 impl std::ops::Deref for VirtualFilePathBuf {

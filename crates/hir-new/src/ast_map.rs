@@ -66,15 +66,15 @@ impl AstIdMap {
 
         bdfs(node, |node| {
             let kind = node.kind();
-            if ast::Dir::can_cast(kind) || ast::Stmt::can_cast(kind) {
+            if ast::Dir::can_cast(kind) || ast::Stmt::can_cast(kind) || ast::Sort::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
-                return true;
+                true
             } else if ast::Phrase::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
-                false
+                true
             } else if ast::Pat::can_cast(kind) {
                 arena.alloc(SyntaxNodePtr::new(&node));
-                false
+                true
             } else {
                 false
             }
@@ -135,6 +135,7 @@ fn bdfs(node: &SyntaxNode, mut f: impl FnMut(SyntaxNode) -> bool) {
                 }
             }
         }
+        current.extend(next.drain(..));
     }
 }
 
