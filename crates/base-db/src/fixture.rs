@@ -109,8 +109,6 @@ impl ChangeFixture {
             } else {
                 entry.text.clone()
             };
-            // For convenience, convert rust style comments `//` to athena style `#`
-            let text = text.replace("//", "#");
 
             let mut meta = FileMeta::from(entry);
             if !meta.path.starts_with(source_root_prefix.as_str()) {
