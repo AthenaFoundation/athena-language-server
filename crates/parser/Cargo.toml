@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 drop_bomb.workspace = true
-logos = "0.12.1"
+logos = "0.13.0"
 static_assertions = "1.1.0"
 
 [features]

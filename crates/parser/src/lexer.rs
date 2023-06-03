@@ -27,7 +27,9 @@ impl<'i> LexedInput<'i> {
 
         let mut pos = 0;
         for (i, token) in lexer.enumerate() {
-            let syntax_kind = token.to_syntax_kind();
+            let syntax_kind = token
+                .map(|t| t.to_syntax_kind())
+                .unwrap_or(SyntaxKind::ERROR);
             if syntax_kind == SyntaxKind::ERROR {
                 error.push(LexerError {
                     // FIXME: this is a terrible error message
@@ -35,7 +37,7 @@ impl<'i> LexedInput<'i> {
                     token: i as u32,
                 });
             }
-            let len = token.len();
+            let len = token.map(|t| t.len()).unwrap_or(0);
             kind.push(syntax_kind);
             start.push(pos as u32);
             pos += len;

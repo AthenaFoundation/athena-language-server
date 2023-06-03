@@ -232,8 +232,6 @@ pub(crate) enum LexerToken {
     SomeSub(usize),
     #[token("some-char", |lex|lex.slice().len())]
     SomeChar(usize),
-    #[error]
-    Error,
 }
 impl LexerToken {
     pub(crate) fn to_syntax_kind(self) -> SyntaxKind {
@@ -347,7 +345,6 @@ impl LexerToken {
             Self::Char(..) => SyntaxKind::CHAR,
             Self::Whitespace(..) => SyntaxKind::WHITESPACE,
             Self::Comment(..) => SyntaxKind::COMMENT,
-            Self::Error => SyntaxKind::ERROR,
         }
     }
     pub(crate) fn len(self) -> usize {
@@ -461,7 +458,6 @@ impl LexerToken {
             Self::Char(len) => len,
             Self::Whitespace(len) => len,
             Self::Comment(len) => len,
-            Self::Error => 0,
         }
     }
 }

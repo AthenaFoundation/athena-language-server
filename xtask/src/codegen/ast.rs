@@ -710,7 +710,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
             match self {
                 #(Self::#variant_names(..) => #syntax_kind,)*
                 #(Self::#complex_variant_names(..) => #complex_syntax_kind,)*
-                Self::Error => SyntaxKind::ERROR,
             }
         }
     };
@@ -723,8 +722,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
         #[derive(Logos, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub(crate) enum LexerToken {
             #( #logos_rule )*
-            #[error]
-            Error,
         }
 
         impl LexerToken {
@@ -734,7 +731,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
                 match self {
                     #(Self::#variant_names(len) => len,)*
                     #(Self::#complex_variant_names(len) => len,)*
-                    Self::Error => 0,
                 }
             }
         }
