@@ -356,7 +356,10 @@ fn func_sorts(p: &mut Parser) {
 
     while !p.at(T![']']) && !p.at_end() {
         if !super::sorts::sort(p) {
-            p.error("expected a sort declaration");
+            p.err_recover(
+                "expected a sort declaration",
+                SORT_DECL_START.union(TokenSet::single(T![']'])),
+            );
         }
     }
 
