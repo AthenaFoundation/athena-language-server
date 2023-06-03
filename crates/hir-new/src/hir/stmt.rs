@@ -131,7 +131,6 @@ impl DebugDump for ModuleExtension {
     fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
         writeln!(dd, "extend-module {} {{", self.name)?;
         for stmt in &self.stmts {
-            dd.tab();
             stmt.debug_dump(dd)?;
         }
         writeln!(dd, "}}")
@@ -149,12 +148,12 @@ impl DebugDump for FunctionSymbol {
         dd.comma_separated(&self.arg_sorts, |dd, arg| dd.hir[*arg].debug_dump(dd))?;
         write!(dd, "] -> ")?;
         dd.hir[self.ret_sort].debug_dump(dd)?;
-        writeln!(dd, "")
+        writeln!(dd)
     }
 }
 
 impl DebugDump for SortAlias {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
@@ -171,67 +170,67 @@ impl DebugDump for FileImport {
 }
 
 impl DebugDump for ModuleImport {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for SortDeclaration {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for DomainDeclaration {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for Assertion {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for ClosedAssertion {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for Overload {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for Definition {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for PhraseStmt {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for Datatypes {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for Structures {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }
 
 impl DebugDump for PrecedenceDeclaration {
-    fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }

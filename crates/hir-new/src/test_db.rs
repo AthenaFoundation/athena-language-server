@@ -40,7 +40,7 @@ impl FileWatcher for TestDB {
 
     fn get_virtual_file(&self, path: VirtualFilePathBuf) -> Option<std::sync::Arc<String>> {
         if self.virtual_files.contains(dbg!(&path)) {
-            Some(self.virtual_file_contents(path.into()))
+            Some(self.virtual_file_contents(path))
         } else {
             None
         }

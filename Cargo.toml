@@ -1,5 +1,6 @@
 [workspace]
 members = ["crates/*", "xtask"]
+resolver = "2"
 
 [profile.dev.package.insta]
 opt-level = 3

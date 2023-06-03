@@ -126,7 +126,7 @@ pub trait HirNode: Sized {
 pub trait Get {
     type Output<'a>;
 
-    fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a>;
+    fn get(self, hir: &FileHir) -> Self::Output<'_>;
 }
 
 impl<T> Get for &T
@@ -135,13 +135,13 @@ where
 {
     type Output<'a> = <T as Get>::Output<'a>;
 
-    fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a> {
+    fn get(self, hir: &FileHir) -> Self::Output<'_> {
         (*self).get(hir)
     }
 }
 
 impl FileHir {
-    pub fn get<'a, G: Get>(&'a self, id: G) -> <G as Get>::Output<'a> {
+    pub fn get<G: Get>(&self, id: G) -> <G as Get>::Output<'_> {
         id.get(self)
     }
 }
@@ -222,7 +222,7 @@ macro_rules! hir_maps {
             impl Get for ::la_arena::Idx<$hir> {
                 type Output<'a> = &'a $hir;
 
-                fn get<'a>(self, hir: &'a FileHir) -> Self::Output<'a> {
+                fn get(self, hir: &FileHir) -> Self::Output<'_> {
                     &hir.data.$arena[self]
                 }
             }

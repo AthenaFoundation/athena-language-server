@@ -4,7 +4,7 @@ use base_db::FileId;
 use la_arena::Idx;
 use syntax::{
     ast::{self, HasDefineBody, HasDefineName, HasName, HasNameRef},
-    AstNode, AstToken,
+    AstToken,
 };
 
 use crate::{
@@ -16,9 +16,7 @@ use crate::{
     },
 };
 
-use super::{
-    FileHir, FileImportId, FunctionSymbol, HasHir, HirData, HirNode, Module, ModuleStmt, SourceMap,
-};
+use super::{FileHir, FileImportId, FunctionSymbol, HirNode, Module, ModuleStmt, SourceMap};
 
 pub(super) struct Ctx<'db> {
     db: &'db dyn HirNewDatabase,
@@ -37,9 +35,6 @@ where
 pub type Id<T> = Idx<T>;
 
 impl<'db> Ctx<'db> {
-    fn data(&mut self) -> &mut HirData {
-        &mut self.hir.data
-    }
     pub(super) fn new(db: &'db dyn HirNewDatabase, file_id: FileId) -> Self {
         let ast_id_map = db.ast_id_map(file_id);
         Self {
@@ -69,7 +64,9 @@ impl<'db> Ctx<'db> {
     fn lower_module_stmt(&mut self, stmt: &ast::Stmt) -> Option<ModuleStmt> {
         match stmt {
             ast::Stmt::Dir(ast::Dir::ModuleDir(module)) => self.lower_module_dir(module).map(into),
-            ast::Stmt::Dir(ast::Dir::ExtendModuleDir(module_ext)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::ExtendModuleDir(module_ext)) => {
+                self.lower_extend_module_dir(module_ext).map(into)
+            }
             ast::Stmt::Dir(ast::Dir::DeclareDir(func_declare)) => {
                 let sym = func_declare.clone().into();
                 self.lower_term_symbol(&sym).map(into)
@@ -79,17 +76,17 @@ impl<'db> Ctx<'db> {
                 self.lower_term_symbol(&sym).map(into)
             }
             ast::Stmt::Dir(ast::Dir::DefineDir(define)) => self.lower_define_dir(define).map(into),
-            ast::Stmt::Dir(ast::Dir::DefineSortDir(alias_def)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::DefineSortDir(_alias_def)) => todo!(),
             ast::Stmt::Dir(ast::Dir::LoadDir(load)) => self.lower_load_dir(load).map(into),
-            ast::Stmt::Dir(ast::Dir::DomainDir(domain)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::DomainsDir(domains)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::AssociativityDir(associativity)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::AssertDir(assert)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::AssertClosedDir(assert)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::OpenDir(open)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::OverloadDir(overload)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::RuleDir(rule)) => todo!(),
-            ast::Stmt::Dir(ast::Dir::SetPrecedenceDir(set_prec)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::DomainDir(_domain)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::DomainsDir(_domains)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::AssociativityDir(_associativity)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::AssertDir(_assert)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::AssertClosedDir(_assert)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::OpenDir(_open)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::OverloadDir(_overload)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::RuleDir(_rule)) => todo!(),
+            ast::Stmt::Dir(ast::Dir::SetPrecedenceDir(_set_prec)) => todo!(),
             ast::Stmt::PhraseStmt(_) => todo!(),
             ast::Stmt::DatatypeStmt(_) => todo!(),
             ast::Stmt::StructureStmt(_) => todo!(),
@@ -100,9 +97,11 @@ impl<'db> Ctx<'db> {
 
     fn lower_load_dir(&mut self, load: &ast::LoadDir) -> Option<FileImportId> {
         let path = load.file_path()?.string_token()?;
-        let path: String = path.text().into();
-        let path = path.trim_matches('"').into();
-        let resolved = self.db.resolve_file_path(self.hir.file_id, path)?;
+        let path = path.text().trim_matches('"').to_owned();
+        let Some(resolved) = self.db.resolve_file_path(self.hir.file_id, path.clone()) else {
+            tracing::error!("failed to resolve file path: {}", path);
+            return None;
+        };
         let import = FileImport { file: resolved };
         Some(self.alloc(load, import))
     }
@@ -159,7 +158,7 @@ impl<'db> Ctx<'db> {
                 DefKind::Procedure(name, params)
             }
             ast::DefineName::ListPat(pat) => {
-                let pat: ast::Pat = pat.clone().into();
+                let pat: ast::Pat = pat.into();
                 let pat = self.lower_pat(&pat)?;
                 DefKind::PatternValue(pat)
             }
@@ -170,15 +169,15 @@ impl<'db> Ctx<'db> {
         Some(self.alloc(define, Definition { kind, body }))
     }
 
-    fn lower_pat(&mut self, pat: &ast::Pat) -> Option<PatId> {
+    fn lower_pat(&mut self, _pat: &ast::Pat) -> Option<PatId> {
         todo!()
     }
 
-    fn lower_expr(&mut self, expr: &ast::Expr) -> Option<ExprId> {
+    fn lower_expr(&mut self, _expr: &ast::Expr) -> Option<ExprId> {
         todo!()
     }
 
-    fn lower_ded(&mut self, ded: &ast::Ded) -> Option<DedId> {
+    fn lower_ded(&mut self, _ded: &ast::Ded) -> Option<DedId> {
         todo!()
     }
 

@@ -31,7 +31,7 @@ pub struct Pat {
 }
 
 impl super::DebugDump for Pat {
-    fn debug_dump(&self, dd: &mut super::DebugDumper) -> core::fmt::Result {
+    fn debug_dump(&self, _dd: &mut super::DebugDumper) -> core::fmt::Result {
         todo!()
     }
 }

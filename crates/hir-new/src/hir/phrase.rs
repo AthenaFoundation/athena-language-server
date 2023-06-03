@@ -43,7 +43,7 @@ impl_debug_dump!(delegate Expr, Ded for Phrase);
 impl super::Get for PhraseId {
     type Output<'a> = PhraseRef<'a>;
 
-    fn get<'a>(self, hir: &'a super::FileHir) -> Self::Output<'a> {
+    fn get(self, hir: &super::FileHir) -> Self::Output<'_> {
         match self {
             Self::Expr(expr) => PhraseRef::Expr(&hir[expr]),
             Self::Ded(ded) => PhraseRef::Ded(&hir[ded]),

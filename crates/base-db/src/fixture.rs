@@ -114,7 +114,7 @@ impl ChangeFixture {
 
             let mut meta = FileMeta::from(entry);
             if !meta.path.starts_with(source_root_prefix.as_str()) {
-                assert!(meta.path.starts_with("/"));
+                assert!(meta.path.starts_with('/'));
                 let path = [source_root_prefix.as_str(), meta.path.as_str()].join("");
 
                 meta.path = path;

@@ -115,7 +115,7 @@ impl fmt::Write for DebugDumper<'_> {
             self.tab()?;
             self.f.write_str(l)?;
         }
-        if s.len() > 0 {
+        if !s.is_empty() {
             self.last = s.as_bytes().last().copied().unwrap();
         }
         Ok(())

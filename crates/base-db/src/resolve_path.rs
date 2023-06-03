@@ -1,4 +1,4 @@
-use std::{ops::Deref, path::Path, str::FromStr};
+use std::{path::Path, str::FromStr};
 
 use paths::{AbsPath, AbsPathBuf};
 
@@ -35,7 +35,7 @@ trait PathLike: Sized {
 
     fn parent(&self) -> Option<Self>;
 
-    fn join<'a>(&self, other: &Self::JoinPath<'a>) -> Self::Owned;
+    fn join(&self, other: &Self::JoinPath<'_>) -> Self::Owned;
 }
 
 impl<'p> PathLike for &'p AbsPath {
@@ -43,7 +43,7 @@ impl<'p> PathLike for &'p AbsPath {
     type Owned = AbsPathBuf;
 
     fn parent(&self) -> Option<Self> {
-        AbsPath::parent(&*self)
+        AbsPath::parent(self)
     }
 
     fn join(&self, other: &Self::JoinPath<'static>) -> AbsPathBuf {
@@ -56,11 +56,11 @@ impl<'p> PathLike for &'p VirtualFilePath {
     type Owned = VirtualFilePathBuf;
 
     fn parent(&self) -> Option<Self> {
-        <VirtualFilePath>::parent(&self)
+        <VirtualFilePath>::parent(self)
     }
 
     fn join(&self, other: &VirtualFilePath) -> VirtualFilePathBuf {
-        self.deref().join(other)
+        (**self).join(other)
     }
 }
 
@@ -75,7 +75,7 @@ impl PathLike for VfsPath {
         }
     }
 
-    fn join<'a>(&self, other: &Self::JoinPath<'a>) -> Self {
+    fn join(&self, other: &Self::JoinPath<'_>) -> Self {
         match (self, other) {
             (VfsPath::Real(a), VfsPathComponent::Real(b)) => a.join(b).into(),
             (VfsPath::Real(_), VfsPathComponent::Virtual(_))
@@ -101,13 +101,6 @@ impl<'a> VfsPathComponent<'a> {
                 | (VfsPathComponent::Virtual(_), VfsPath::Virtual(_))
         )
     }
-
-    fn is_absolute(&self) -> bool {
-        match self {
-            VfsPathComponent::Real(path) => path.is_absolute(),
-            VfsPathComponent::Virtual(path) => path.is_absolute(),
-        }
-    }
 }
 
 impl<'a> From<&'a VirtualFilePath> for VfsPathComponent<'a> {
@@ -123,11 +116,7 @@ impl<'a> From<&'a Path> for VfsPathComponent<'a> {
 }
 
 #[must_use]
-fn find_file<'a>(
-    db: &dyn SourceDatabase,
-    from: FileId,
-    path: VfsPathComponent<'a>,
-) -> Option<FileId> {
+fn find_file(db: &dyn SourceDatabase, from: FileId, path: VfsPathComponent<'_>) -> Option<FileId> {
     eprintln!("find_file({:?}, {:?})", from, path);
     let current_file = db.lookup_intern_path(from);
     let dir = current_file.parent()?;
@@ -138,14 +127,14 @@ fn find_file<'a>(
         return Some(file_id);
     }
     let roots = db.roots();
-    for root in roots.into_iter() {
-        let comp: VfsPathComponent<'_> = path.clone().into();
-        if !comp.matches(&root) {
+    for root in roots.iter() {
+        let comp: VfsPathComponent<'_> = path.clone();
+        if !comp.matches(root) {
             continue;
         }
         let path = root.join(&comp);
         if path.file_exists(db) {
-            let file_id = db.intern_path(path.into());
+            let file_id = db.intern_path(path);
             return Some(file_id);
         }
     }
