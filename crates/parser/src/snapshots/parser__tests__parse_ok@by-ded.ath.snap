@@ -4,37 +4,38 @@ description: "(!absurd (q by (!mp premise p)))\n"
 input_file: crates/parser/test_data/parser/ok/file/by-ded.ath
 ---
 SOURCE_FILE
-  BANG_METHOD_CALL_DED
-    L_PAREN "("
-    BANG "!"
-    IDENT_EXPR
-      NAME_REF
-        IDENT "absurd"
-    WHITESPACE " "
-    BY_DED
+  PHRASE_STMT
+    BANG_METHOD_CALL_DED
       L_PAREN "("
+      BANG "!"
       IDENT_EXPR
         NAME_REF
-          IDENT "q"
+          IDENT "absurd"
       WHITESPACE " "
-      BY_KW "by"
-      WHITESPACE " "
-      BANG_METHOD_CALL_DED
+      BY_DED
         L_PAREN "("
-        BANG "!"
         IDENT_EXPR
           NAME_REF
-            IDENT "mp"
+            IDENT "q"
         WHITESPACE " "
-        IDENT_EXPR
-          NAME_REF
-            IDENT "premise"
+        BY_KW "by"
         WHITESPACE " "
-        IDENT_EXPR
-          NAME_REF
-            IDENT "p"
+        BANG_METHOD_CALL_DED
+          L_PAREN "("
+          BANG "!"
+          IDENT_EXPR
+            NAME_REF
+              IDENT "mp"
+          WHITESPACE " "
+          IDENT_EXPR
+            NAME_REF
+              IDENT "premise"
+          WHITESPACE " "
+          IDENT_EXPR
+            NAME_REF
+              IDENT "p"
+          R_PAREN ")"
         R_PAREN ")"
       R_PAREN ")"
-    R_PAREN ")"
   WHITESPACE "\n"
 

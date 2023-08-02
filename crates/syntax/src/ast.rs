@@ -12,7 +12,7 @@ mod traits;
 
 pub use self::{
     generated::{nodes::*, tokens::*},
-    node_ext::{NameOrNameRef, SortLike},
+    node_ext::{DatatypeOrDatatypes, NameOrNameRef, SortLike, StructureOrStructures, TermSymbol},
 };
 pub use traits::{HasDefineBody, HasDefineName, HasName, HasNameRef};
 /// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
@@ -131,20 +131,36 @@ mod support {
 }
 
 mod ext {
-    use super::PrefixDefine;
-
-    impl From<PrefixDefine> for super::Definition {
-        fn from(value: PrefixDefine) -> Self {
-            super::Definition::PrefixDefineDir(value.into())
-        }
-    }
-
     impl super::Sort {
         pub fn as_ident_sort(&self) -> Option<&super::IdentSort> {
             match self {
                 super::Sort::IdentSort(ident) => Some(ident),
                 _ => None,
             }
+        }
+    }
+
+    impl From<super::Domain> for super::Stmt {
+        fn from(value: super::Domain) -> Self {
+            match value {
+                super::Domain::DomainDir(d) => d.into(),
+                super::Domain::DomainsDir(d) => d.into(),
+            }
+        }
+    }
+
+    impl From<super::TermSymbol> for super::Dir {
+        fn from(value: super::TermSymbol) -> Self {
+            match value {
+                super::TermSymbol::Function(f) => f.into(),
+                super::TermSymbol::Constant(c) => c.into(),
+            }
+        }
+    }
+
+    impl From<super::TermSymbol> for super::Stmt {
+        fn from(value: super::TermSymbol) -> Self {
+            super::Dir::from(value).into()
         }
     }
 }

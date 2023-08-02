@@ -4,33 +4,34 @@ description: ((!claim A) by (!claim B))
 input_file: crates/syntax/test_data/validation/by-ded-expr-start.ath
 ---
 SOURCE_FILE
-  BY_DED
-    L_PAREN "("
-    BANG_METHOD_CALL_DED
+  PHRASE_STMT
+    BY_DED
       L_PAREN "("
-      BANG "!"
-      IDENT_EXPR
-        NAME_REF
-          IDENT "claim"
+      BANG_METHOD_CALL_DED
+        L_PAREN "("
+        BANG "!"
+        IDENT_EXPR
+          NAME_REF
+            IDENT "claim"
+        WHITESPACE " "
+        IDENT_EXPR
+          NAME_REF
+            IDENT "A"
+        R_PAREN ")"
       WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "A"
-      R_PAREN ")"
-    WHITESPACE " "
-    BY_KW "by"
-    WHITESPACE " "
-    BANG_METHOD_CALL_DED
-      L_PAREN "("
-      BANG "!"
-      IDENT_EXPR
-        NAME_REF
-          IDENT "claim"
+      BY_KW "by"
       WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "B"
+      BANG_METHOD_CALL_DED
+        L_PAREN "("
+        BANG "!"
+        IDENT_EXPR
+          NAME_REF
+            IDENT "claim"
+        WHITESPACE " "
+        IDENT_EXPR
+          NAME_REF
+            IDENT "B"
+        R_PAREN ")"
       R_PAREN ")"
-    R_PAREN ")"
 error Node(BANG_METHOD_CALL_DED@1..11): By deduction must start with an expression
 

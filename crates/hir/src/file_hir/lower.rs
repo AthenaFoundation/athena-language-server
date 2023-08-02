@@ -282,7 +282,11 @@ impl Ctx {
     fn lower_stmt(&mut self, stmt: ast::Stmt) -> Vec<ModuleItem> {
         match stmt {
             ast::Stmt::Dir(dir) => self.lower_dir(dir).into_iter().flatten().collect(),
-            ast::Stmt::Phrase(p) => self.lower_phrase(p).into_iter().map(Into::into).collect(),
+            ast::Stmt::PhraseStmt(p) => self
+                .lower_phrase(p.phrase())
+                .into_iter()
+                .map(Into::into)
+                .collect(),
             ast::Stmt::DatatypeStmt(_) => {
                 // todo!(); TODO: implement
                 Vec::new()
@@ -614,6 +618,10 @@ impl Ctx {
                 None
             }
             ast::Dir::RuleDir(_) => {
+                // todo!(); TODO: implement
+                None
+            }
+            ast::Dir::DefineSortDir(_) => {
                 // todo!(); TODO: implement
                 None
             }

@@ -16,6 +16,9 @@
 //   A?          -- zero or one repetition
 //   (A)         -- same as A
 //   label:A     -- suggested name for field of AST node
+//
+// Special cases:
+//  required__{label} indicates that the node _must_ be present in the syntax tree
 
 //
 // The `Tokens` non-terminal definition is special. It should consist of alternating terminals
@@ -107,11 +110,14 @@ SourceFile =
 
 Stmt =
     Dir // ✅
-    | Phrase // ✅
+    | PhraseStmt // ✅
     | DatatypeStmt
     | StructureStmt
     | DatatypesStmt
     | StructuresStmt
+
+PhraseStmt =
+    required__phrase : Phrase
 
 StructureNameDef =
     SortDecl
@@ -131,7 +137,7 @@ LimitedCompoundSort =
     '(' IdentSort LimitedSort* ')'
 
 CompoundConstructor =
-    '(' Name MaybeTaggedFieldSort ')'
+    '(' Name MaybeTaggedFieldSort* ')'
 
 MaybeTaggedFieldSort =
     (tag:Name ':')? LimitedSort
@@ -205,6 +211,7 @@ Dir =
     | SetPrecedenceDir
     | OverloadDir
     | RuleDir
+    | DefineSortDir
 
 ModuleDir =
     'module' Name '{' Stmt* '}'
@@ -273,7 +280,7 @@ DeclareAttrs =
     '[' DeclareAttr* InputTransformDecl? ']'
 
 FuncSorts =
-    '[' Sort* ']'
+    '['? Sort* ']'?
 
 SortVarsDecl =
     '(' (IdentSortDecl (',' IdentSortDecl)*) ')'
@@ -310,8 +317,11 @@ DefineNamedPattern =
 DefineProc = 
     '(' Name args:MaybeWildcardTypedParam* ')'
 
+FilePath =
+    'string'
+
 LoadDir =
-    '('? 'load' 'string' ')'? // can be surrounded by parens
+    '('? 'load' FilePath ')'? // can be surrounded by parens
 
 AssertDir = 
     InfixAssertDir
@@ -355,14 +365,14 @@ SetPrecedenceDir = // if multiple idents, must be surrounded by parens
     '('? 'set-precedence' '('? NameRef* ')'? Expr ')'? // can be surrounded by parens
 
 PhrasePair =
-    '(' Phrase Phrase ')'
+    '(' first_phrase:Phrase second_phrase:Phrase ')'
 
 OverloadDir =
     OverloadSingle
     | OverloadMulti
 
 OverloadSingle =
-    '('? 'overload' Phrase Phrase ')'?
+    '('? 'overload' first_phrase:Phrase second_phrase:Phrase ')'?
 
 OverloadMulti =
     '('? 'overload' PhrasePair* ')'?
@@ -750,7 +760,7 @@ ValOfPat =
     '(' 'val-of' NameRef ')'
 
 ListOfPat =
-    '(' 'list-of' Pat Pat ')'
+    '(' 'list-of' first:Pat second:Pat ')'
 
 SplitPat =
     '(' 'split' first:Pat second:Pat rest:Pat* ')'

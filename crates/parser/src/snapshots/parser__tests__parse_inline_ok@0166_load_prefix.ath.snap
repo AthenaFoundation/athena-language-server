@@ -7,7 +7,8 @@ LOAD_DIR
   L_PAREN "("
   LOAD_KW "load"
   WHITESPACE " "
-  STRING "\"list.ath\""
+  FILE_PATH
+    STRING "\"list.ath\""
   R_PAREN ")"
   WHITESPACE "\n"
 

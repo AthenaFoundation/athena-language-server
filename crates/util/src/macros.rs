@@ -24,22 +24,6 @@ macro_rules! format_to {
 /// ```
 #[macro_export]
 macro_rules! impl_from {
-    ($($variant:ident $(($($sub_variant:ident),*))?),* for $enum:ident) => {
-        $(
-            impl From<$variant> for $enum {
-                fn from(it: $variant) -> $enum {
-                    $enum::$variant(it)
-                }
-            }
-            $($(
-                impl From<$sub_variant> for $enum {
-                    fn from(it: $sub_variant) -> $enum {
-                        $enum::$variant($variant::$sub_variant(it))
-                    }
-                }
-            )*)?
-        )*
-    };
     ($($variant:ident$(<$V:ident>)?),* for $enum:ident) => {
         $(
             impl$(<$V>)? From<$variant$(<$V>)?> for $enum$(<$V>)? {
@@ -48,5 +32,14 @@ macro_rules! impl_from {
                 }
             }
         )*
-    }
+    };
+    ($($variant:ident($t:ty)),* for $enum:ident) => {
+        $(
+            impl From<$t> for $enum {
+                fn from(it: $t) -> $enum {
+                    $enum::$variant(it)
+                }
+            }
+        )*
+    };
 }

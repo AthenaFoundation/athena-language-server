@@ -23,9 +23,10 @@ SOURCE_FILE
       R_BRACK "]"
     ERROR
       R_BRACK "]"
-    LIST_EXPR
-      L_BRACK "["
-      R_BRACK "]"
+    PHRASE_STMT
+      LIST_EXPR
+        L_BRACK "["
+        R_BRACK "]"
     WHITESPACE "\n   "
     INFIX_DECLARE_DIR
       DECLARE_KW "declare"

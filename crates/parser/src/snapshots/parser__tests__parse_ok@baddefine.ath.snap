@@ -4,34 +4,20 @@ description: "match p {\n\t(|| (some-atom _) (~ (some-atom _))) => true\n| _  =>
 input_file: crates/parser/test_data/parser/ok/file/baddefine.ath
 ---
 SOURCE_FILE
-  INFIX_MATCH_EXPR
-    MATCH_KW "match"
-    WHITESPACE " "
-    IDENT_EXPR
-      NAME_REF
-        IDENT "p"
-    WHITESPACE " "
-    L_CURLY "{"
-    WHITESPACE "\n\t"
-    MATCH_ARM
-      OR_PAT
-        L_PAREN "("
-        PIPE2 "||"
-        WHITESPACE " "
-        SOME_THING_PAT
+  PHRASE_STMT
+    INFIX_MATCH_EXPR
+      MATCH_KW "match"
+      WHITESPACE " "
+      IDENT_EXPR
+        NAME_REF
+          IDENT "p"
+      WHITESPACE " "
+      L_CURLY "{"
+      WHITESPACE "\n\t"
+      MATCH_ARM
+        OR_PAT
           L_PAREN "("
-          SOME_ATOM_KW "some-atom"
-          WHITESPACE " "
-          IDENT_PAT
-            WILDCARD
-              UNDERSCORE "_"
-          R_PAREN ")"
-        WHITESPACE " "
-        COMPOUND_PAT
-          L_PAREN "("
-          IDENT_PAT
-            NAME
-              IDENT "~"
+          PIPE2 "||"
           WHITESPACE " "
           SOME_THING_PAT
             L_PAREN "("
@@ -41,26 +27,41 @@ SOURCE_FILE
               WILDCARD
                 UNDERSCORE "_"
             R_PAREN ")"
+          WHITESPACE " "
+          COMPOUND_PAT
+            L_PAREN "("
+            IDENT_PAT
+              NAME
+                IDENT "~"
+            WHITESPACE " "
+            SOME_THING_PAT
+              L_PAREN "("
+              SOME_ATOM_KW "some-atom"
+              WHITESPACE " "
+              IDENT_PAT
+                WILDCARD
+                  UNDERSCORE "_"
+              R_PAREN ")"
+            R_PAREN ")"
           R_PAREN ")"
-        R_PAREN ")"
-      WHITESPACE " "
-      FAT_ARROW "=>"
-      WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "true"
-    WHITESPACE "\n"
-    MATCH_ARM
-      PIPE "|"
-      WHITESPACE " "
-      IDENT_PAT
-        UNDERSCORE "_"
-      WHITESPACE "  "
-      FAT_ARROW "=>"
-      WHITESPACE " "
-      IDENT_EXPR
-        NAME_REF
-          IDENT "false"
-    WHITESPACE "\n"
-    R_CURLY "}"
+        WHITESPACE " "
+        FAT_ARROW "=>"
+        WHITESPACE " "
+        IDENT_EXPR
+          NAME_REF
+            IDENT "true"
+      WHITESPACE "\n"
+      MATCH_ARM
+        PIPE "|"
+        WHITESPACE " "
+        IDENT_PAT
+          UNDERSCORE "_"
+        WHITESPACE "  "
+        FAT_ARROW "=>"
+        WHITESPACE " "
+        IDENT_EXPR
+          NAME_REF
+            IDENT "false"
+      WHITESPACE "\n"
+      R_CURLY "}"
 

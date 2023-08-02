@@ -1,4 +1,4 @@
-use crate::{ast, AstNode, SyntaxKind, SyntaxNode};
+use crate::{ast, AstNode, SyntaxNode};
 use smol_str::SmolStr;
 
 impl ast::Name {
@@ -23,86 +23,104 @@ fn text_of_first_token(node: &SyntaxNode) -> SmolStr {
         .into()
 }
 
-#[derive(Debug, Clone)]
-pub enum NameOrNameRef {
-    Name(ast::Name),
-    NameRef(ast::NameRef),
-}
+macro_rules! wrapper_enum {
+    (@inner { @derive = { #[derive($($derive: tt)*)] }, @vis = $v:vis, @name = $enm:ident, @variants = [$(($variant:ident, $typ: ty)),*] }) => {
+        #[derive($($derive)*)]
+        $v enum $enm { $($variant($typ)),* }
 
-impl ast::AstNode for NameOrNameRef {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::NAME | SyntaxKind::NAME_REF)
-    }
+        $(
+            impl From<$typ> for $enm {
+                fn from(t: $typ) -> Self {
+                    $enm::$variant(t)
+                }
+            }
+        )*
 
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        let res = match syntax.kind() {
-            SyntaxKind::NAME => NameOrNameRef::Name(ast::Name { syntax }),
-            SyntaxKind::NAME_REF => NameOrNameRef::NameRef(ast::NameRef { syntax }),
-            _ => return None,
-        };
+        impl $crate::ast::AstNode for $enm {
+            fn can_cast(kind: $crate::SyntaxKind) -> bool {
+                $(
+                    <$typ as $crate::ast::AstNode>::can_cast(kind)
+                )||*
+            }
 
-        Some(res)
-    }
+            fn cast(syntax: $crate::SyntaxNode) -> Option<Self> {
+                $(
+                    if let Some(it) = <$typ as $crate::ast::AstNode>::cast(syntax.clone()).map($enm::$variant) {
+                        return Some(it);
+                    }
+                )*
 
-    fn syntax(&self) -> &SyntaxNode {
-        match self {
-            NameOrNameRef::Name(it) => it.syntax(),
-            NameOrNameRef::NameRef(it) => it.syntax(),
+                None
+            }
+
+            fn syntax(&self) -> &$crate::SyntaxNode {
+                match self {
+                    $(
+                        $enm::$variant(it) => it.syntax(),
+                    )*
+                }
+            }
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum SortLike {
-    Sort(ast::Sort),
-    SortDecl(ast::SortDecl),
-    LimitedSort(ast::LimitedSort),
-}
-
-impl From<ast::Sort> for SortLike {
-    fn from(sort: ast::Sort) -> Self {
-        SortLike::Sort(sort)
-    }
-}
-
-impl From<ast::SortDecl> for SortLike {
-    fn from(decl: ast::SortDecl) -> Self {
-        SortLike::SortDecl(decl)
-    }
-}
-
-impl From<ast::LimitedSort> for SortLike {
-    fn from(limited: ast::LimitedSort) -> Self {
-        SortLike::LimitedSort(limited)
-    }
-}
-
-impl ast::AstNode for SortLike {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        ast::Sort::can_cast(kind)
-            || ast::SortDecl::can_cast(kind)
-            || ast::LimitedSort::can_cast(kind)
-    }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if let Some(sort) = ast::Sort::cast(syntax.clone()) {
-            return Some(SortLike::Sort(sort));
+    };
+    (#[derive($($derive:tt)*)] $v: vis enum $enm: ident { $($variant:ident ($typ:ty)),* $(,)?}) => {
+        wrapper_enum! {
+            @inner {
+                @derive = { #[derive($($derive)*)] },
+                @vis = $v,
+                @name = $enm,
+                @variants = [$(($variant, $typ)),*]
+            }
         }
-        if let Some(decl) = ast::SortDecl::cast(syntax.clone()) {
-            return Some(SortLike::SortDecl(decl));
+    };
+    ($v: vis enum $enm: ident { $($variant:ident ($typ:ty)),* $(,)?}) => {
+        wrapper_enum! {
+            @inner {
+                @derive = { #[derive(Debug, Clone)] },
+                @vis = $v,
+                @name = $enm,
+                @variants = [$(($variant, $typ)),*]
+            }
         }
-        if let Some(limited) = ast::LimitedSort::cast(syntax) {
-            return Some(SortLike::LimitedSort(limited));
-        }
+    };
+}
 
-        None
+wrapper_enum! {
+    #[derive(Debug, Clone)]
+    pub enum NameOrNameRef {
+        Name(ast::Name),
+        NameRef(ast::NameRef),
     }
+}
 
-    fn syntax(&self) -> &SyntaxNode {
-        match self {
-            SortLike::Sort(it) => it.syntax(),
-            SortLike::SortDecl(it) => it.syntax(),
-            SortLike::LimitedSort(it) => it.syntax(),
-        }
+wrapper_enum! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum SortLike {
+        Sort(ast::Sort),
+        SortDecl(ast::SortDecl),
+        LimitedSort(ast::LimitedSort),
+    }
+}
+
+wrapper_enum! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum DatatypeOrDatatypes {
+        Datatype(ast::DatatypeStmt),
+        Datatypes(ast::DatatypesStmt),
+    }
+}
+
+wrapper_enum! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum StructureOrStructures {
+        Structure(ast::StructureStmt),
+        Structures(ast::StructuresStmt),
+    }
+}
+
+wrapper_enum! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum TermSymbol {
+        Function(ast::DeclareDir),
+        Constant(ast::ConstantDeclareDir),
     }
 }

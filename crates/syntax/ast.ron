@@ -240,6 +240,7 @@ KindsSrc(
         "DOMAINS_DIR",
         "MODULE_DIR",
         "LOAD_DIR",
+        "FILE_PATH",
         "INFIX_ASSERT_DIR",
         "ASSERT_CLOSED_DIR",
         "OPEN_DIR",
@@ -277,5 +278,6 @@ KindsSrc(
         "DATATYPES_STMT",
         "STRUCTURE_STMT",
         "STRUCTURES_STMT",
+        "PHRASE_STMT",
     ],
 )

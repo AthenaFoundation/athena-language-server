@@ -13,7 +13,12 @@ use super::{directives::DIR_START_SET, phrases::PHRASE_START_SET, sorts::sort_de
 fn phrase_stmt(p: &mut Parser) {
     // test_err(stmt) phrase_stmt_err
     // (! )
-    super::phrases::phrase(p);
+    let m = p.start();
+    if super::phrases::phrase(p) {
+        m.complete(p, SyntaxKind::PHRASE_STMT);
+    } else {
+        m.abandon(p);
+    }
 }
 
 // test(stmt) dir_stmt
@@ -168,6 +173,9 @@ fn structure_def(p: &mut Parser) {
 
 // test(stmt) datatype_stmt
 // datatype Foo := bar | (baz num:Int)
+
+// test(stmt) polymorphic_datatype
+// datatype (List S) := nil | (:: S (List S))
 fn datatype_stmt(p: &mut Parser) {
     assert!(p.at(T![datatype]));
 

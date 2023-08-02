@@ -128,6 +128,19 @@ impl AstEnumSrc {
             .collect()
     }
 
+    fn transitive_variants(&self, grammar: &AstSrc) -> Vec<(Ident, Ident)> {
+        let mut new_variants = Vec::new();
+        for variant in self.variants() {
+            if let Some(enm) = grammar.get_enum_node(&variant.to_string()) {
+                new_variants.extend(
+                    std::iter::repeat_with(|| variant.clone()).zip(enm.variants().into_iter()),
+                );
+            }
+        }
+
+        new_variants
+    }
+
     fn partitioned_variants(&self, grammar: &AstSrc) -> (Vec<Ident>, Vec<Ident>) {
         let mut enums = Vec::new();
         let mut non_enums = Vec::new();
@@ -187,9 +200,17 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                         }
                     }
                 } else {
+                    let (ret, unwrap) = if field.is_optional() {
+                        (quote!(Option<#ty>), quote!())
+                    } else {
+                        (
+                            quote!(#ty),
+                            quote!(.expect("node is required: this indicates a bug in the parser")),
+                        )
+                    };
                     quote! {
-                        pub fn #method_name(&self) -> Option<#ty> {
-                            support::child(&self.syntax)
+                        pub fn #method_name(&self) -> #ret {
+                            support::child(&self.syntax) #unwrap
                         }
                     }
                 }
@@ -318,6 +339,8 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                 }
             };
 
+            let (transitive_parents, transitive_variants): (Vec<_>, Vec<_>) = en.transitive_variants(grammar).into_iter().unzip();
+
 
             (
                 quote! {
@@ -333,6 +356,13 @@ fn generate_nodes(kinds: &KindsSrc, grammar: &AstSrc) -> String {
                         impl From<#variants> for #name {
                             fn from(node: #variants) -> #name {
                                 #name::#variants(node)
+                            }
+                        }
+                    )*
+                    #(
+                        impl From<#transitive_variants> for #name {
+                            fn from(node: #transitive_variants) -> #name {
+                                #name::#transitive_parents(node.into())
                             }
                         }
                     )*
@@ -616,6 +646,8 @@ fn generate_syntax_kinds(grammar: &KindsSrc) -> String {
             [lifetime_ident] => { $crate::SyntaxKind::LIFETIME_IDENT };
             [ident] => { $crate::SyntaxKind::IDENT };
             [shebang] => { $crate::SyntaxKind::SHEBANG };
+            [string] => { $crate::SyntaxKind::STRING };
+            [char] => { $crate::SyntaxKind::CHAR };
         }
         pub use T;
     };
@@ -678,7 +710,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
             match self {
                 #(Self::#variant_names(..) => #syntax_kind,)*
                 #(Self::#complex_variant_names(..) => #complex_syntax_kind,)*
-                Self::Error => SyntaxKind::ERROR,
             }
         }
     };
@@ -691,8 +722,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
         #[derive(Logos, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub(crate) enum LexerToken {
             #( #logos_rule )*
-            #[error]
-            Error,
         }
 
         impl LexerToken {
@@ -702,7 +731,6 @@ fn generate_lexer(grammar: &AstSrc) -> String {
                 match self {
                     #(Self::#variant_names(len) => len,)*
                     #(Self::#complex_variant_names(len) => len,)*
-                    Self::Error => 0,
                 }
             }
         }
@@ -833,6 +861,15 @@ impl Field {
             self,
             Field::Node {
                 cardinality: Cardinality::Many,
+                ..
+            }
+        )
+    }
+    fn is_optional(&self) -> bool {
+        matches!(
+            self,
+            Field::Node {
+                cardinality: Cardinality::Optional,
                 ..
             }
         )
@@ -1015,6 +1052,27 @@ fn print_rule(rule: &Rule, grammar: &Grammar) {
     }
 }
 
+struct LabelInfo {
+    name: String,
+    is_optional: bool,
+}
+
+fn parse_label(label: impl AsRef<str>) -> LabelInfo {
+    let label = label.as_ref();
+    if label.starts_with("required__") {
+        let name = label.trim_start_matches("required__").to_string();
+        LabelInfo {
+            name,
+            is_optional: false,
+        }
+    } else {
+        LabelInfo {
+            name: label.to_string(),
+            is_optional: true,
+        }
+    }
+}
+
 fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, rule: &Rule) {
     if lower_comma_list(acc, grammar, label, rule) {
         return;
@@ -1023,30 +1081,40 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
     match rule {
         Rule::Node(node) => {
             let ty = grammar[*node].name.clone();
-            let name = label.cloned().unwrap_or_else(|| to_lower_snake_case(&ty));
+            let label_info = label.map(parse_label);
+            let name = label_info
+                .as_ref()
+                .map(|l| l.name.clone())
+                .unwrap_or_else(|| to_lower_snake_case(&ty));
+
+            let is_optional = label_info.map(|l| l.is_optional).unwrap_or(true);
             let field = Field::Node {
                 name,
                 ty,
-                cardinality: Cardinality::Optional,
+                cardinality: if is_optional {
+                    Cardinality::Optional
+                } else {
+                    Cardinality::One
+                },
             };
             acc.push(field);
         }
         Rule::Token(token) => {
             assert!(label.is_none());
             let mut name = grammar[*token].name.clone();
-            if name != "int_number" && name != "string" && name != "char" {
-                if "[]{}()".contains(&name) {
-                    name = format!("'{name}'");
-                }
-                let field = Field::Token(name);
-                acc.push(field);
+            if "[]{}()".contains(&name) {
+                name = format!("'{name}'");
             }
+            let field = Field::Token(name);
+            acc.push(field);
         }
         Rule::Rep(inner) => {
             if let Rule::Node(node) = &**inner {
                 let ty = grammar[*node].name.clone();
-                let name = label
-                    .cloned()
+                let label_info = label.map(parse_label);
+                let name = label_info
+                    .as_ref()
+                    .map(|l| l.name.clone())
                     .unwrap_or_else(|| pluralize(&to_lower_snake_case(&ty)));
                 let field = Field::Node {
                     name,

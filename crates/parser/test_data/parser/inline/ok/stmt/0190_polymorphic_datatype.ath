@@ -1,0 +1,1 @@
+datatype (List S) := nil | (:: S (List S))

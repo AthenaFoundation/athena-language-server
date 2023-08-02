@@ -1,0 +1,25 @@
+[package]
+name = "hir-new"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+la-arena.workspace = true
+
+syntax.workspace = true
+base-db.workspace = true
+rustc-hash.workspace = true
+smol_str = "0.2.0"
+paste = "1.0.12"
+util.workspace = true
+tracing.workspace = true
+duplicate = "1.0.0"
+im = "15.1.0"
+impl-tools = "0.8.0"
+bimap = "0.6.3"
+
+[dev-dependencies]
+insta.workspace = true
+test-utils.workspace = true

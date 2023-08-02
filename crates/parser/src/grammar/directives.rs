@@ -356,7 +356,10 @@ fn func_sorts(p: &mut Parser) {
 
     while !p.at(T![']']) && !p.at_end() {
         if !super::sorts::sort(p) {
-            p.error("expected a sort declaration");
+            p.err_recover(
+                "expected a sort declaration",
+                SORT_DECL_START.union(TokenSet::single(T![']'])),
+            );
         }
     }
 
@@ -620,7 +623,9 @@ fn load_dir(p: &mut Parser, kind: ParseKind) {
             p.bump_any();
         }
     } else {
+        let m = p.start();
         p.bump(SyntaxKind::STRING);
+        m.complete(p, SyntaxKind::FILE_PATH);
     }
 
     if kind.is_prefix() {

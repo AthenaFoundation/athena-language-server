@@ -6,7 +6,7 @@ mod fixture;
 use std::collections::BTreeMap;
 
 pub use dissimilar::diff as __diff;
-pub use rustc_hash::FxHashMap;
+pub use rustc_hash::{FxHashMap, FxHashSet};
 
 use text_size::{TextRange, TextSize};
 use tracing_subscriber::EnvFilter;

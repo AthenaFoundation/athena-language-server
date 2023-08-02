@@ -1,12 +1,19 @@
 use core::fmt;
 
 use crate::db::HirDatabase;
-use base_db::{salsa, FileWatcher, Upcast};
+use base_db::{salsa, FileWatcher, Upcast, VirtualFileDatabase, VirtualFilePathBuf};
+use rustc_hash::FxHashSet;
 
 #[derive(Default)]
-#[salsa::database(base_db::SourceDatabaseStorage, crate::db::HirDatabaseStorage)]
+#[salsa::database(
+    base_db::SourceDatabaseStorage,
+    crate::db::HirDatabaseStorage,
+    base_db::VirtualFileDatabaseStorage
+)]
 pub(crate) struct TestDB {
     storage: salsa::Storage<TestDB>,
+
+    virtual_files: FxHashSet<VirtualFilePathBuf>,
 }
 
 impl salsa::Database for TestDB {}
@@ -23,6 +30,19 @@ impl FileWatcher for TestDB {
         _path: base_db::AbsPathBuf,
         _contents: std::sync::Arc<String>,
     ) {
+    }
+
+    fn add_virtual_file(&mut self, path: VirtualFilePathBuf, contents: std::sync::Arc<String>) {
+        self.virtual_files.insert(path.clone());
+        self.set_virtual_file_contents(path, contents);
+    }
+
+    fn get_virtual_file(&self, path: VirtualFilePathBuf) -> Option<std::sync::Arc<String>> {
+        if self.virtual_files.contains(&path) {
+            Some(self.virtual_file_contents(path))
+        } else {
+            None
+        }
     }
 }
 

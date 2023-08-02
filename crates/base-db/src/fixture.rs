@@ -5,7 +5,7 @@ use test_utils::{
     extract_range_or_offset, Fixture, RangeOrOffset, CURSOR_MARKER, ESCAPED_CURSOR_MARKER,
 };
 
-use crate::{FileId, FilePosition, FileRange, SourceDatabase, VirtualFilePath};
+use crate::{FileId, FilePosition, FileRange, SourceDatabase, VfsPath, VirtualFilePathBuf};
 
 pub trait WithFixture: Default + SourceDatabase + 'static {
     fn with_single_file(ath_fixture: &str) -> (Self, FileId) {
@@ -59,7 +59,7 @@ impl<DB: SourceDatabase + Default + 'static> WithFixture for DB {}
 
 pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
-    file_paths: Vec<VirtualFilePath>,
+    file_paths: Vec<VirtualFilePathBuf>,
     file_contents: Vec<String>,
     pub files: Vec<FileId>,
 }
@@ -67,6 +67,12 @@ pub struct ChangeFixture {
 impl ChangeFixture {
     pub fn apply(&mut self, db: &mut dyn SourceDatabase) {
         assert_eq!(self.file_paths.len(), self.file_contents.len());
+        db.set_roots(
+            vec![VfsPath::Virtual(VirtualFilePathBuf::assert(
+                "virtual:/".into(),
+            ))]
+            .into(),
+        );
         for (idx, (path, text)) in self
             .file_paths
             .iter()
@@ -75,7 +81,7 @@ impl ChangeFixture {
         {
             let id = db.intern_path(path.clone().into());
             assert_eq!(id.0.as_usize(), idx);
-            db.set_virtual_file_contents(path.clone(), Arc::new(text.clone()));
+            db.add_virtual_file(path.clone(), Arc::new(text.clone()));
             self.files.push(id);
         }
     }
@@ -85,7 +91,7 @@ impl ChangeFixture {
         let mut file_paths = Vec::new();
         let mut file_contents = Vec::new();
 
-        let source_root_prefix = "/".to_string();
+        let source_root_prefix = VirtualFilePathBuf::PREFIX.to_string();
         let mut file_id = FileId(salsa::InternId::from(0u32));
 
         let mut file_position = None;
@@ -104,10 +110,16 @@ impl ChangeFixture {
                 entry.text.clone()
             };
 
-            let meta = FileMeta::from(entry);
+            let mut meta = FileMeta::from(entry);
+            if !meta.path.starts_with(source_root_prefix.as_str()) {
+                assert!(meta.path.starts_with('/'));
+                let path = [source_root_prefix.as_str(), meta.path.as_str()].join("");
+
+                meta.path = path;
+            }
             assert!(meta.path.starts_with(&source_root_prefix));
 
-            file_paths.push(meta.path.into());
+            file_paths.push(meta.path.try_into().unwrap());
             file_contents.push(text);
             file_id = FileId(salsa::InternId::from(file_id.0.as_u32() + 1));
         }

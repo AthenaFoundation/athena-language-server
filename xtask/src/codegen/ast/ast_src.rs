@@ -40,6 +40,7 @@ pub(crate) enum Field {
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) enum Cardinality {
     Optional,
+    One,
     Many,
 }
 

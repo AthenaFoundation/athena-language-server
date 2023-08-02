@@ -10,6 +10,7 @@ ide-db.workspace = true
 syntax.workspace = true
 hir.workspace = true
 tracing.workspace = true
+extend = "1.2.0"
 
 [dev-dependencies]
 test-utils.workspace = true

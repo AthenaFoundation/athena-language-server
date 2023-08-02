@@ -244,6 +244,7 @@ pub enum SyntaxKind {
     DOMAINS_DIR,
     MODULE_DIR,
     LOAD_DIR,
+    FILE_PATH,
     INFIX_ASSERT_DIR,
     ASSERT_CLOSED_DIR,
     OPEN_DIR,
@@ -280,6 +281,7 @@ pub enum SyntaxKind {
     DATATYPES_STMT,
     STRUCTURE_STMT,
     STRUCTURES_STMT,
+    PHRASE_STMT,
     #[doc(hidden)]
     __LAST,
 }
@@ -530,6 +532,7 @@ impl SyntaxKind {
                 | DOMAINS_DIR
                 | MODULE_DIR
                 | LOAD_DIR
+                | FILE_PATH
                 | INFIX_ASSERT_DIR
                 | ASSERT_CLOSED_DIR
                 | OPEN_DIR
@@ -566,6 +569,7 @@ impl SyntaxKind {
                 | DATATYPES_STMT
                 | STRUCTURE_STMT
                 | STRUCTURES_STMT
+                | PHRASE_STMT
         )
     }
     pub fn from_keyword(ident: &str) -> Option<SyntaxKind> {
@@ -1013,6 +1017,12 @@ macro_rules! T {
     };
     [shebang] => {
         $crate ::SyntaxKind::SHEBANG
+    };
+    [string] => {
+        $crate ::SyntaxKind::STRING
+    };
+    [char] => {
+        $crate ::SyntaxKind::CHAR
     };
 }
 pub use T;
