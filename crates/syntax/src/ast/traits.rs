@@ -23,3 +23,15 @@ pub trait HasDefineBody: AstNode {
         support::child(self.syntax())
     }
 }
+
+impl HasNameRef for ast::NameRef {
+    fn name_ref(&self) -> Option<ast::NameRef> {
+        Some(self.clone())
+    }
+}
+
+impl HasName for ast::Name {
+    fn name(&self) -> Option<ast::Name> {
+        Some(self.clone())
+    }
+}

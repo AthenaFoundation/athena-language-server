@@ -93,7 +93,7 @@ wrapper_enum! {
 }
 
 wrapper_enum! {
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum SortLike {
         Sort(ast::Sort),
         SortDecl(ast::SortDecl),
