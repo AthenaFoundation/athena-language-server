@@ -270,8 +270,8 @@ impl CompoundConstructor {
     pub fn l_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!['('])
     }
-    pub fn maybe_tagged_field_sort(&self) -> Option<MaybeTaggedFieldSort> {
-        support::child(&self.syntax)
+    pub fn maybe_tagged_field_sorts(&self) -> AstChildren<MaybeTaggedFieldSort> {
+        support::children(&self.syntax)
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![')'])
@@ -2660,7 +2660,10 @@ impl ListOfPat {
     pub fn list_of_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T![list - of])
     }
-    pub fn pat(&self) -> Option<Pat> {
+    pub fn first(&self) -> Option<Pat> {
+        support::child(&self.syntax)
+    }
+    pub fn second(&self) -> Option<Pat> {
         support::child(&self.syntax)
     }
     pub fn r_paren_token(&self) -> Option<SyntaxToken> {

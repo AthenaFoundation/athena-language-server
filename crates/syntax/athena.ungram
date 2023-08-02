@@ -137,7 +137,7 @@ LimitedCompoundSort =
     '(' IdentSort LimitedSort* ')'
 
 CompoundConstructor =
-    '(' Name MaybeTaggedFieldSort ')'
+    '(' Name MaybeTaggedFieldSort* ')'
 
 MaybeTaggedFieldSort =
     (tag:Name ':')? LimitedSort
@@ -760,7 +760,7 @@ ValOfPat =
     '(' 'val-of' NameRef ')'
 
 ListOfPat =
-    '(' 'list-of' Pat Pat ')'
+    '(' 'list-of' first:Pat second:Pat ')'
 
 SplitPat =
     '(' 'split' first:Pat second:Pat rest:Pat* ')'
