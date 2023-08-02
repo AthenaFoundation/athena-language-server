@@ -1,0 +1,14 @@
+---
+source: crates/hir-new/src/hir/tests.rs
+assertion_line: 26
+description: "\n        //- /foo.ath\n        module my-module {\n            declare Foo: [int] -> int\n\n            load \"virtual:/bar.ath\"\n        }\n        //- /bar.ath\n        module barry {\n            declare Bar: (A, B) [int (List A) (List B)] -> int\n        }\n        "
+---
+module my-module {
+    declare Foo: () [<int>] -> <int>
+    load {
+        module barry {
+            declare Bar: (A, B) [<int>, <List><<A>>, <List><<B>>] -> <int>
+        }
+    }
+}
+

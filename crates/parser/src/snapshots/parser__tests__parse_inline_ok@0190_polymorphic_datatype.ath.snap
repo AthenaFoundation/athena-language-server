@@ -1,0 +1,53 @@
+---
+source: crates/parser/src/tests.rs
+description: "datatype (List S) := nil | (:: S (List S))\n"
+input_file: crates/parser/test_data/parser/inline/ok/stmt/0190_polymorphic_datatype.ath
+---
+DATATYPE_STMT
+  DATATYPE_KW "datatype"
+  WHITESPACE " "
+  STRUCTURE_DEF
+    STRUCTURE_NAME_DEF
+      COMPOUND_SORT
+        L_PAREN "("
+        IDENT_SORT_DECL
+          NAME
+            IDENT "List"
+        WHITESPACE " "
+        IDENT_SORT_DECL
+          NAME
+            IDENT "S"
+        R_PAREN ")"
+    WHITESPACE " "
+    COLON_EQ ":="
+    WHITESPACE " "
+    CONSTANT_CONSTRUCTOR
+      NAME
+        IDENT "nil"
+    WHITESPACE " "
+    PIPE "|"
+    WHITESPACE " "
+    COMPOUND_CONSTRUCTOR
+      L_PAREN "("
+      NAME
+        IDENT "::"
+      WHITESPACE " "
+      MAYBE_TAGGED_FIELD_SORT
+        IDENT_SORT
+          NAME_REF
+            IDENT "S"
+      WHITESPACE " "
+      MAYBE_TAGGED_FIELD_SORT
+        LIMITED_COMPOUND_SORT
+          L_PAREN "("
+          IDENT_SORT
+            NAME_REF
+              IDENT "List"
+          WHITESPACE " "
+          IDENT_SORT
+            NAME_REF
+              IDENT "S"
+          R_PAREN ")"
+      R_PAREN ")"
+  WHITESPACE "\n"
+

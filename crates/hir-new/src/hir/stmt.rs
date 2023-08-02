@@ -29,7 +29,7 @@ pub struct FunctionSymbol {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SortAlias {
     pub name: Name,
-    pub sort_ref: SortRefId,
+    pub sort: SortRefId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +39,7 @@ pub struct FileImport {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleImport {
-    pub name: Name,
+    pub names: Vec<Name>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -72,6 +72,11 @@ pub struct Overload {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Overloads {
+    pub overloads: Vec<Overload>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Definition {
     pub kind: DefKind,
     pub body: PhraseId,
@@ -92,6 +97,7 @@ pub enum DefKind {
 pub struct Param {
     pub name: NameOrWildcard,
     pub sort: Option<SortRefId>,
+    pub op_arity: Option<Name>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,10 +109,66 @@ pub struct PhraseStmt {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Datatypes {}
+pub struct ConstructorParam {
+    pub tag: Option<Name>,
+    pub sort: SortRefId,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Structures {}
+pub struct Constructor {
+    pub name: Name,
+    pub params: Vec<ConstructorParam>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Datatype {
+    pub name: Name,
+    pub sort_args: Vec<Name>,
+    pub constructors: Vec<Constructor>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Datatypes {
+    pub datatypes: Vec<Datatype>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Structure {
+    pub name: Name,
+    pub sort_args: Vec<Name>,
+    pub constructors: Vec<Constructor>,
+}
+
+pub(crate) struct StructureDef {
+    pub name: Name,
+    pub sort_args: Vec<Name>,
+    pub constructors: Vec<Constructor>,
+}
+
+impl From<StructureDef> for Structure {
+    fn from(def: StructureDef) -> Self {
+        Self {
+            name: def.name,
+            sort_args: def.sort_args,
+            constructors: def.constructors,
+        }
+    }
+}
+
+impl From<StructureDef> for Datatype {
+    fn from(def: StructureDef) -> Self {
+        Self {
+            name: def.name,
+            sort_args: def.sort_args,
+            constructors: def.constructors,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Structures {
+    pub structures: Vec<Structure>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrecedenceDeclaration {
@@ -140,11 +202,10 @@ impl DebugDump for ModuleExtension {
 impl DebugDump for FunctionSymbol {
     fn debug_dump(&self, dd: &mut DebugDumper) -> core::fmt::Result {
         write!(dd, "declare ")?;
-        dd.comma_separated(&self.names, |dd, name| write!(dd, "{}", name))?;
+        dd.comma_separated(&self.names, |dd, name| write!(dd, "{name}"))?;
         write!(dd, ": (")?;
-        dd.comma_separated(&self.sort_vars, |dd, sort| write!(dd, "{sort:?}"))?;
-        write!(dd, ")")?;
-        write!(dd, " [")?;
+        dd.comma_separated(&self.sort_vars, |dd, sort| write!(dd, "{sort}"))?;
+        write!(dd, ") [")?;
         dd.comma_separated(&self.arg_sorts, |dd, arg| dd.hir[*arg].debug_dump(dd))?;
         write!(dd, "] -> ")?;
         dd.hir[self.ret_sort].debug_dump(dd)?;
@@ -199,7 +260,7 @@ impl DebugDump for ClosedAssertion {
     }
 }
 
-impl DebugDump for Overload {
+impl DebugDump for Overloads {
     fn debug_dump(&self, _dd: &mut DebugDumper) -> core::fmt::Result {
         todo!()
     }

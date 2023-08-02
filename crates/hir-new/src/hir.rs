@@ -22,6 +22,7 @@ use syntax::{ast, AstNode, AstPtr};
 
 use crate::{ast_map::FileAstId, db::HirNewDatabase, InFile};
 
+use self::stmt::{Datatypes, Structures};
 pub use self::{
     debug_dump::{DebugDump, DebugDumper},
     ded::Ded,
@@ -33,7 +34,8 @@ pub use self::{
     sort_ref::SortRef,
     stmt::{
         Assertion, ClosedAssertion, DefKind, Definition, DomainDeclaration, FileImport,
-        FunctionSymbol, Module, ModuleExtension, ModuleImport, Param, SortAlias,
+        FunctionSymbol, Module, ModuleExtension, ModuleImport, Overload, Overloads, Param,
+        SortAlias,
     },
 };
 
@@ -237,21 +239,24 @@ macro_rules! hir_maps {
 }
 
 hir_maps! {
-    ast::ModuleDir          => Module               | modules,
-    ast::ExtendModuleDir    => ModuleExtension      | module_exts,
-    ast::TermSymbol         => FunctionSymbol       | func_symbols,
-    ast::DefineSortDir      => SortAlias            | sort_aliases,
-    ast::LoadDir            => FileImport           | file_imports,
-    ast::OpenDir            => ModuleImport         | module_imports,
-    ast::Domain             => DomainDeclaration    | domains,
-    ast::AssertDir          => Assertion            | assertions,
-    ast::AssertClosedDir    => ClosedAssertion      | closed_assertions,
-    ast::Dir                => Dir                  | dirs,
-    ast::Pat                => Pat                  | pats,
-    ast::Sort               => SortRef              | sort_refs,
-    ast::DefineDir          => Definition           | definitions,
-    ast::Expr               => Expr                 | exprs,
-    ast::Ded                => Ded                  | deds,
+    ast::ModuleDir              => Module               | modules,
+    ast::ExtendModuleDir        => ModuleExtension      | module_exts,
+    ast::TermSymbol             => FunctionSymbol       | func_symbols,
+    ast::DefineSortDir          => SortAlias            | sort_aliases,
+    ast::LoadDir                => FileImport           | file_imports,
+    ast::OpenDir                => ModuleImport         | module_imports,
+    ast::Domain                 => DomainDeclaration    | domains,
+    ast::AssertDir              => Assertion            | assertions,
+    ast::AssertClosedDir        => ClosedAssertion      | closed_assertions,
+    ast::Dir                    => Dir                  | dirs,
+    ast::Pat                    => Pat                  | pats,
+    ast::SortLike               => SortRef              | sort_refs,
+    ast::DefineDir              => Definition           | definitions,
+    ast::Expr                   => Expr                 | exprs,
+    ast::Ded                    => Ded                  | deds,
+    ast::OverloadDir            => Overloads            | overloads,
+    ast::DatatypeOrDatatypes    => Datatypes            | datatypes,
+    ast::StructureOrStructures  => Structures           | structures,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -267,6 +272,10 @@ pub enum ModuleStmt {
     ClosedAssertion(Idx<ClosedAssertion>),
     Dir(Idx<Dir>),
     Definition(Idx<Definition>),
+    Phrase(PhraseId),
+    Overloads(Idx<Overloads>),
+    Datatypes(Idx<Datatypes>),
+    Structures(Idx<Structures>),
 }
 
 macro_rules! impl_from_idx {
@@ -308,7 +317,7 @@ macro_rules! impl_debug_dump {
                 match self {
                     $(
                         Self::$e(idx) => {
-                            dd.hir[*idx].debug_dump(dd)?;
+                            dd.get(*idx).debug_dump(dd)?;
                         }
                     )+
                 }
@@ -339,17 +348,7 @@ macro_rules! impl_debug_dump {
 
 pub(crate) use impl_debug_dump;
 
-macro_rules! impl_macros {
-    ($(,)? ; $($e: ident),+ for $t: ty) => {};
-    ($m1: ident ! $(, $rest: ident !)* ; $($e: ident),+ for $t: ty) => {
-        $m1!($($e),+ for $t);
-        impl_macros!($($rest!),* ; $($e),+ for $t);
-    };
-}
-
-impl_macros! {
-    impl_from_idx!, impl_debug_dump!;
-
+impl_from_idx! {
     Module,
     ModuleExtension,
     FunctionSymbol,
@@ -360,5 +359,32 @@ impl_macros! {
     Assertion,
     ClosedAssertion,
     Dir,
+    Overloads,
+    Datatypes,
+    Structures,
     Definition for ModuleStmt
+}
+
+impl_debug_dump! {
+    Module,
+    ModuleExtension,
+    FunctionSymbol,
+    SortAlias,
+    FileImport,
+    ModuleImport,
+    DomainDeclaration,
+    Assertion,
+    ClosedAssertion,
+    Dir,
+    Definition,
+    Overloads,
+    Datatypes,
+    Structures,
+    Phrase for ModuleStmt
+}
+
+impl From<PhraseId> for ModuleStmt {
+    fn from(id: PhraseId) -> Self {
+        Self::Phrase(id)
+    }
 }

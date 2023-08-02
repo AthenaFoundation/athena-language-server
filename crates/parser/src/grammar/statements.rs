@@ -173,6 +173,9 @@ fn structure_def(p: &mut Parser) {
 
 // test(stmt) datatype_stmt
 // datatype Foo := bar | (baz num:Int)
+
+// test(stmt) polymorphic_datatype
+// datatype (List S) := nil | (:: S (List S))
 fn datatype_stmt(p: &mut Parser) {
     assert!(p.at(T![datatype]));
 

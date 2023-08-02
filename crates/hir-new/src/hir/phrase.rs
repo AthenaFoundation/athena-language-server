@@ -2,7 +2,7 @@ use util::impl_from;
 
 use crate::hir::{Ded, DedId, Expr, ExprId};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum PhraseId {
     Expr(ExprId),
     Ded(DedId),

@@ -2,9 +2,16 @@ use core::fmt;
 
 use smol_str::SmolStr;
 use syntax::{ast, AstToken};
+use util::impl_from;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Name(SmolStr);
+
+impl Name {
+    pub fn new_trustme(text: impl Into<SmolStr>) -> Name {
+        Name(text.into())
+    }
+}
 
 pub trait AsName {
     fn as_name(&self) -> Name;
@@ -39,3 +46,5 @@ pub enum NameOrWildcard {
     Name(Name),
     Wildcard,
 }
+
+impl_from!(Name for NameOrWildcard);
